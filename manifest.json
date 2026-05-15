@@ -3,6 +3,7 @@
   "short_name": "Nest",
   "description": "Track savings, goals and tithe across multiple accounts and currencies",
   "start_url": "/nest/index.html",
+  "scope": "/nest/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#1B3A6B",
