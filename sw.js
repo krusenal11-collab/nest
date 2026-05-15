@@ -1,4 +1,4 @@
-const CACHE = 'nest-v2'; // Changed from v1 to force a cache refresh
+const CACHE = 'nest-v5';
 const ASSETS = [
   '/nest/', 
   '/nest/index.html', 
