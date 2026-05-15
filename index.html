@@ -1130,9 +1130,11 @@ function toggleCurrency(){
 // ═══════════════════════════════════════════════════════════
 //  SERVICE WORKER
 // ═══════════════════════════════════════════════════════════
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/sw.js').catch(()=>{});
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/nest/sw.js', { scope: '/nest/' })
+    .catch(err => console.error("SW registration failed:", err));
 }
+
 
 // ═══════════════════════════════════════════════════════════
 //  INIT
