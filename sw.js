@@ -1,5 +1,9 @@
-const CACHE = 'nest-v1';
-const ASSETS = ['/', '/index.html', 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'];
+const CACHE = 'nest-v2'; // Changed from v1 to force a cache refresh
+const ASSETS = [
+  '/nest/', 
+  '/nest/index.html', 
+  'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
