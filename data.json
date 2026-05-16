@@ -13,6 +13,13 @@
       "currency": "USD",
       "balance": 0,
       "createdAt": 1778892184972
+    },
+    {
+      "id": 1778892172302,
+      "name": "Amex",
+      "currency": "USD",
+      "balance": 0,
+      "createdAt": 1778892190992
     }
   ],
   "entries": [
@@ -32,5 +39,5 @@
   "titheEntries": [],
   "exchangeRate": 95.85,
   "rateLastFetch": 1778891460915,
-  "lastSaved": 1778892186991
+  "lastSaved": 1778892192493
 }
