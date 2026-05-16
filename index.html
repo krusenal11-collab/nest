@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Nest">
+<title>Nest — Savings Tracker</title>
+<link rel="apple-touch-icon" href="/nest/App_Icon.png">
+<link rel="manifest" href="manifest.json">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --blue:#007AFF;--green:#34C759;--red:#FF3B30;--orange:#FF9500;
+  --purple:#5E35B1;--label:#000;--label2:#8E8E93;--sep:#E5E5EA;
+  --bg:#F2F2F7;--card:#fff;--hdr1:#1B3A6B;--hdr2:#0D2A50;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:var(--bg);color:var(--label);overflow:hidden;height:100vh}
+#app{display:flex;flex-direction:column;height:100vh}
+#screen{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(60px + var(--safe-bottom))}
+/* Header */
+.hdr{background:linear-gradient(180deg,var(--hdr1),var(--hdr2));padding:env(safe-area-inset-top,44px) 20px 24px;color:#fff}
+.hdr-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.hdr h1{font-size:28px;font-weight:700;letter-spacing:-.5px}
+.hdr-actions{display:flex;gap:8px;align-items:center}
+.toggle-btn{background:rgba(255,255,255,.2);border:none;color:#fff;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;cursor:pointer}
+.icon-btn{background:none;border:none;color:#fff;cursor:pointer;font-size:20px;width:34px;height:34px;display:flex;align-items:center;justify-content:center}
+.hdr-sub{font-size:10px;color:rgba(255,255,255,.5);margin-bottom:12px}
+/* Hero card */
+.hero{background:rgba(255,255,255,.15);border-radius:18px;padding:16px;cursor:pointer}
+.hero-label{font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:4px}
+.hero-amount{font-size:36px;font-weight:700;letter-spacing:-1px;color:#fff}
+.hero-pills{display:flex;gap:8px;margin-top:12px}
+.pill{background:rgba(255,255,255,.15);border-radius:10px;padding:7px 10px;flex:1}
+.pill-label{font-size:8px;color:rgba(255,255,255,.6)}
+.pill-val{font-size:12px;font-weight:700;color:#fff;margin-top:2px}
+/* Tabs */
+#tabs{display:flex;background:rgba(249,249,249,.96);border-top:0.5px solid #C6C6C8;padding:7px 0;padding-bottom:calc(7px + var(--safe-bottom));position:fixed;bottom:0;left:0;right:0;z-index:100}
+.tab{flex:1;text-align:center;cursor:pointer;-webkit-user-select:none}
+.tab-icon{font-size:22px;line-height:1}
+.tab-label{font-size:9px;margin-top:2px;color:var(--label2)}
+.tab.active .tab-label{color:var(--blue);font-weight:500}
+/* Cards & sections */
+.section{padding:16px}
+.section-title{font-size:18px;font-weight:700;margin-bottom:10px}
+.card{background:var(--card);border-radius:14px;overflow:hidden;margin-bottom:12px}
+.card-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:.5px solid var(--sep);cursor:pointer}
+.card-row:last-child{border-bottom:none}
+.badge{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0}
+.row-info{flex:1;min-width:0}
+.row-name{font-size:13px;font-weight:500}
+.row-sub{font-size:10px;color:var(--label2);margin-top:1px}
+.row-right{text-align:right;flex-shrink:0}
+.row-amount{font-size:13px;font-weight:600}
+.pbar-wrap{height:3px;background:var(--sep);border-radius:2px;margin-top:4px}
+.pbar-fill{height:3px;border-radius:2px}
+.currency-tag{display:inline-block;padding:1px 4px;border-radius:3px;font-size:7px;font-weight:700;color:#fff;margin-left:4px;vertical-align:middle}
+/* Buttons */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:14px;font-size:15px;font-weight:600;padding:14px;cursor:pointer;width:100%}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-danger{background:var(--red);color:#fff}
+.btn-warning{background:var(--orange);color:#fff}
+.btn-outline{background:transparent;border:1.5px solid var(--sep);color:var(--label)}
+.btn-sm{font-size:13px;padding:8px 14px;border-radius:10px;width:auto}
+/* History */
+.hist-filters{display:flex;gap:6px;overflow-x:auto;padding:12px 16px 0;-webkit-overflow-scrolling:touch}
+.hist-filters::-webkit-scrollbar{display:none}
+.filter-chip{border:none;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.filter-chip.on{background:var(--blue);color:#fff}
+.filter-chip.off{background:var(--sep);color:var(--label2)}
+.search-wrap{padding:8px 16px}
+.search-input{width:100%;padding:9px 14px;border-radius:10px;border:none;background:var(--card);font-size:14px;outline:none;box-shadow:0 0 0 .5px var(--sep)}
+.hist-summary{display:flex;gap:8px;padding:0 16px 8px}
+.hist-stat{flex:1;background:var(--card);border-radius:12px;padding:10px}
+.hist-stat-label{font-size:9px;color:var(--label2)}
+.hist-stat-val{font-size:15px;font-weight:700;margin-top:2px}
+.date-group-header{font-size:12px;font-weight:600;color:var(--label2);padding:8px 16px 4px;text-transform:uppercase;letter-spacing:.4px}
+.tx-card{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--card);border-bottom:.5px solid var(--sep)}
+.tx-card:first-of-type{border-radius:14px 14px 0 0}
+.tx-card:last-of-type{border-radius:0 0 14px 14px;border-bottom:none}
+.tx-card.solo{border-radius:14px;border-bottom:none}
+.tx-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.tx-meta{flex:1;min-width:0}
+.tx-name{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tx-note{font-size:11px;color:var(--label2)}
+.tx-date{font-size:10px;color:var(--label2)}
+.tx-amounts{text-align:right;flex-shrink:0}
+.tx-amount-main{font-size:14px;font-weight:600}
+.tx-amount-conv{font-size:10px;color:var(--label2)}
+/* Goals */
+.goal-card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:10px}
+.goal-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.goal-emoji{font-size:24px}
+.goal-name{font-size:15px;font-weight:600}
+.goal-target{font-size:11px;color:var(--label2);margin-top:2px}
+.goal-pct{font-size:16px;font-weight:700}
+.goal-bar{height:6px;background:var(--sep);border-radius:3px;margin-bottom:8px;overflow:hidden}
+.goal-bar-fill{height:6px;border-radius:3px;transition:width .3s}
+.goal-stats{display:flex;justify-content:space-between;font-size:12px;margin-bottom:12px}
+.goal-actions{display:flex;gap:8px}
+.goal-complete-banner{background:rgba(52,199,89,.1);border-radius:8px;padding:8px;text-align:center;font-size:13px;font-weight:600;color:var(--green);margin-bottom:12px}
+/* Tithe */
+.tithe-hdr{background:linear-gradient(180deg,#4A148C,#6A1B9A);padding:env(safe-area-inset-top,44px) 20px 24px;color:#fff}
+.slider-wrap{padding:0 4px}
+.slider{width:100%;-webkit-appearance:none;height:6px;border-radius:3px;outline:none;background:var(--sep)}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--purple);border:3px solid #fff;box-shadow:0 2px 8px rgba(94,53,177,.4);cursor:pointer}
+.slider-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--label2);margin-top:4px}
+.donation-box{background:rgba(94,53,177,.1);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+/* Chart */
+.chart-wrap{position:relative;height:140px;margin:8px 0}
+/* Modal / Sheet */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:flex-end}
+.overlay.show{display:flex}
+.sheet{background:var(--bg);border-radius:20px 20px 0 0;width:100%;max-height:92vh;overflow-y:auto;padding:8px 20px calc(20px + var(--safe-bottom))}
+.sheet-handle{width:36px;height:4px;background:#C7C7CC;border-radius:2px;margin:0 auto 14px}
+.sheet-title{font-size:20px;font-weight:700;margin-bottom:16px}
+/* Form elements */
+.form-group{margin-bottom:12px}
+.form-label{font-size:13px;font-weight:500;color:var(--label2);margin-bottom:6px;display:block}
+.form-input{width:100%;padding:11px 14px;border-radius:12px;border:.5px solid var(--sep);background:var(--card);font-size:15px;outline:none;-webkit-appearance:none}
+.form-input:focus{border-color:var(--blue)}
+.form-row{display:flex;gap:10px}
+.seg-ctrl{display:flex;background:var(--sep);border-radius:9px;padding:2px;margin-bottom:12px}
+.seg-btn{flex:1;padding:5px;border:none;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;background:transparent;color:var(--label2)}
+.seg-btn.on{background:var(--card);color:var(--label)}
+.currency-sel{display:flex;gap:8px;margin-bottom:12px}
+.cur-btn{flex:1;padding:8px;border-radius:10px;border:.5px solid var(--sep);font-size:13px;font-weight:500;cursor:pointer;background:transparent;color:var(--label2)}
+.cur-btn.on{background:var(--blue);border-color:var(--blue);color:#fff}
+/* Quick amounts */
+.quick-amts{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.qa{border:none;border-radius:9px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer}
+/* Account selector in sheet */
+.acc-list-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--card);border-bottom:.5px solid var(--sep);cursor:pointer}
+.acc-list-item:first-child{border-radius:14px 14px 0 0}
+.acc-list-item:last-child{border-radius:0 0 14px 14px;border-bottom:none}
+.acc-list-item.solo{border-radius:14px;border-bottom:none}
+.check-circle{width:20px;height:20px;border-radius:50%;flex-shrink:0}
+/* Empty state */
+.empty{text-align:center;padding:60px 20px;color:var(--label2)}
+.empty-icon{font-size:56px;margin-bottom:16px}
+.empty h3{font-size:18px;font-weight:600;color:var(--label);margin-bottom:6px}
+.empty p{font-size:14px}
+/* Toast */
+#toast{position:fixed;bottom:calc(80px + var(--safe-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:rgba(0,0,0,.8);color:#fff;padding:8px 18px;border-radius:20px;font-size:13px;opacity:0;transition:all .3s;z-index:300;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* Sync status */
+.sync-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px}
+.sync-row{display:flex;align-items:center;font-size:10px;color:rgba(255,255,255,.6);margin-top:2px}
+.setup-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;background:linear-gradient(180deg,var(--hdr1),var(--hdr2))}
+.setup-card{background:rgba(255,255,255,.12);border-radius:20px;padding:24px;width:100%;max-width:360px;margin-top:24px}
+.token-input{width:100%;padding:12px 14px;border-radius:12px;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:13px;outline:none;font-family:monospace}
+.token-input::placeholder{color:rgba(255,255,255,.4)}
+/* Divider */
+hr.divider{border:none;border-top:.5px solid var(--sep);margin:12px 0}
+/* Tag chips for goal filter on history */
+.goal-tag{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:4px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="screen"></div>
+  <nav id="tabs">
+    <div class="tab active" data-tab="home" onclick="switchTab('home')">
+      <div class="tab-icon">🏠</div><div class="tab-label">Home</div>
+    </div>
+    <div class="tab" data-tab="history" onclick="switchTab('history')">
+      <div class="tab-icon">📋</div><div class="tab-label">History</div>
+    </div>
+    <div class="tab" data-tab="goals" onclick="switchTab('goals')">
+      <div class="tab-icon">🎯</div><div class="tab-label">Goals</div>
+    </div>
+    <div class="tab" data-tab="tithe" onclick="switchTab('tithe')">
+      <div class="tab-icon">💜</div><div class="tab-label">Tithe</div>
+    </div>
+  </nav>
+</div>
+<!-- Modal overlay -->
+<div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
+  <div class="sheet" id="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div id="sheet-content"></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  GITHUB SYNC CONFIG
+// ═══════════════════════════════════════════════════════════
+const GH_OWNER = 'krusenal11-collab';
+const GH_REPO  = 'nest';
+const GH_FILE  = 'data.json';
+const GH_API   = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`;
+const GH_RAW   = `https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/${GH_FILE}`;
+
+function getToken(){ return localStorage.getItem('nest_gh_token') || '' }
+function setToken(t){ localStorage.setItem('nest_gh_token', t.trim()) }
+
+// Sync state: 'idle' | 'syncing' | 'ok' | 'error'
+let _syncStatus = 'idle';
+let _syncTimer  = null;
+let _ghFileSha  = null; // cached SHA needed for GitHub PUT
+
+function setSyncStatus(s){
+  _syncStatus = s;
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-lbl');
+  if(!dot||!lbl) return;
+  const map = { idle:['#8E8E93',''], syncing:['#FF9500','Syncing…'], ok:['#34C759','Synced'], error:['#FF3B30','Sync error'] };
+  dot.style.background = map[s][0];
+  lbl.textContent = map[s][1];
+}
+
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+const S = {
+  accounts:[],entries:[],goals:[],titheEntries:[],
+  displayCurrency:'INR',exchangeRate:83.5,rateLastFetch:0,
+  currentTab:'home',
+  histFilter:'all',histPeriod:'all',histSearch:'',histGoalId:null
+};
+
+const COLORS=['#007AFF','#34C759','#FF9500','#AF52DE','#FF2D55','#5AC8FA'];
+function acctColor(id){return COLORS[Math.abs(id)%COLORS.length]}
+
+// Keys that are data (synced to GitHub) vs UI state (local only)
+const DATA_KEYS = ['accounts','entries','goals','titheEntries','exchangeRate','rateLastFetch'];
+
+function dataSnapshot(){
+  const d = {};
+  DATA_KEYS.forEach(k => d[k] = S[k]);
+  d.lastSaved = Date.now();
+  return d;
+}
+
+function applyData(d){
+  DATA_KEYS.forEach(k => { if(d[k] !== undefined) S[k] = d[k]; });
+}
+
+// Save to localStorage instantly, then debounce GitHub sync
+function save(){
+  localStorage.setItem('nest_v1', JSON.stringify(S));
+  if(!getToken()) return;
+  clearTimeout(_syncTimer);
+  setSyncStatus('syncing');
+  _syncTimer = setTimeout(syncToGitHub, 1500);
+}
+
+function load(){
+  try{
+    const d = localStorage.getItem('nest_v1');
+    if(d) Object.assign(S, JSON.parse(d));
+  }catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GITHUB SYNC
+// ═══════════════════════════════════════════════════════════
+async function loadFromGitHub(){
+  // Fetch data.json from the public repo (no auth needed to read)
+  try{
+    const r = await fetch(GH_RAW + '?t=' + Date.now());
+    if(!r.ok) return false; // file doesn't exist yet — that's fine
+    const d = await r.json();
+    applyData(d);
+    localStorage.setItem('nest_v1', JSON.stringify(S));
+    return true;
+  }catch(e){ return false; }
+}
+
+async function getFileSha(){
+  // We need the current SHA to update an existing file via GitHub API
+  if(_ghFileSha) return _ghFileSha;
+  try{
+    const r = await fetch(GH_API, {
+      headers:{ 'Authorization': 'token ' + getToken(), 'Accept': 'application/vnd.github.v3+json' }
+    });
+    if(r.status === 404) return null; // file doesn't exist yet
+    if(!r.ok) return null;
+    const d = await r.json();
+    _ghFileSha = d.sha;
+    return _ghFileSha;
+  }catch(e){ return null; }
+}
+
+async function syncToGitHub(){
+  const token = getToken();
+  if(!token){ setSyncStatus('idle'); return; }
+  setSyncStatus('syncing');
+  try{
+    const sha = await getFileSha();
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(dataSnapshot(), null, 2))));
+    const body = { message: 'Nest sync ' + new Date().toISOString(), content };
+    if(sha) body.sha = sha;
+
+    const r = await fetch(GH_API, {
+      method: 'PUT',
+      headers:{
+        'Authorization': 'token ' + token,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    if(!r.ok){
+      const err = await r.json().catch(()=>({}));
+      // SHA mismatch — re-fetch and retry once
+      if(r.status === 409 || (err.message && err.message.includes('sha'))){
+        _ghFileSha = null;
+        const sha2 = await getFileSha();
+        if(sha2){
+          body.sha = sha2;
+          const r2 = await fetch(GH_API, {
+            method:'PUT',
+            headers:{ 'Authorization':'token '+token, 'Accept':'application/vnd.github.v3+json', 'Content-Type':'application/json' },
+            body: JSON.stringify(body)
+          });
+          if(r2.ok){ const d2=await r2.json(); _ghFileSha=d2.content.sha; setSyncStatus('ok'); return; }
+        }
+      }
+      // Show the actual GitHub error message so user knows what's wrong
+      const msg = err.message || ('HTTP ' + r.status);
+      toast('⚠️ Sync failed: ' + msg);
+      throw new Error(msg);
+    }
+    const resp = await r.json();
+    _ghFileSha = resp.content.sha;
+    setSyncStatus('ok');
+  }catch(e){
+    setSyncStatus('error');
+    console.error('GitHub sync failed:', e);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════════════════════════
+let _id=Date.now();
+function uid(){return ++_id}
+
+function convert(amount,from,to){
+  if(from===to)return amount;
+  return from==='USD'?amount*S.exchangeRate:amount/S.exchangeRate;
+}
+
+function fmt(amount,currency,compact=false){
+  const abs=Math.abs(amount);
+  let str;
+  if(compact&&abs>=100000)str=(abs/100000).toFixed(1)+'L';
+  else if(compact&&abs>=1000)str=(abs/1000).toFixed(1)+'K';
+  else str=abs.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return (currency==='INR'?'₹':'$')+str;
+}
+
+function fmtDate(ts){
+  const d=new Date(ts);
+  return d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+}
+
+function fmtDateGroup(ts){
+  const d=new Date(ts);const now=new Date();
+  const diff=Math.floor((now-d)/(86400000));
+  if(diff===0)return'Today';if(diff===1)return'Yesterday';
+  return d.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+}
+
+function toDateVal(ts){
+  const d=new Date(ts);
+  return d.toISOString().split('T')[0];
+}
+
+function fromDateVal(s){
+  return new Date(s+'T00:00:00').getTime();
+}
+
+function totalSavings(currency){
+  return S.accounts.reduce((sum,a)=>sum+convert(a.balance,a.currency,currency),0);
+}
+
+function goalSaved(goalId,currency){
+  return S.entries.filter(e=>e.goalId===goalId).reduce((sum,e)=>{
+    const amt=convert(e.amount,e.currency,currency);
+    return sum+(e.type==='deposit'?amt:-amt);
+  },0);
+}
+
+async function fetchRate(){
+  const now=Date.now();
+  if(now-S.rateLastFetch<6*3600*1000&&S.exchangeRate>0)return;
+  try{
+    const r=await fetch('https://api.frankfurter.dev/v2/rate/USD/INR');
+    const d=await r.json();
+    S.exchangeRate=d.rate;S.rateLastFetch=now;save();
+    renderCurrent();
+  }catch(e){}
+}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SETUP SCREEN (shown when no token)
+// ═══════════════════════════════════════════════════════════
+function renderSetup(){
+  return `
+  <div class="setup-screen">
+    <div style="font-size:56px;margin-bottom:12px">🪺</div>
+    <h1 style="font-size:28px;font-weight:700;color:#fff;letter-spacing:-.5px">Welcome to Nest</h1>
+    <p style="color:rgba(255,255,255,.7);font-size:14px;margin-top:8px;line-height:1.5">
+      To sync your data across devices, connect your GitHub account with a personal access token.
+      Your data will be saved to your <strong style="color:#fff">krusenal11-collab/nest</strong> repo.
+    </p>
+    <div class="setup-card">
+      <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:16px;text-align:left">How to get your token:</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.7);line-height:1.8;text-align:left;margin-bottom:16px">
+        1. Go to <strong style="color:#fff">github.com → Settings</strong><br>
+        2. Scroll to <strong style="color:#fff">Developer settings</strong><br>
+        3. <strong style="color:#fff">Personal access tokens → Tokens (classic)</strong><br>
+        4. Click <strong style="color:#fff">Generate new token (classic)</strong><br>
+        5. Check the <strong style="color:#fff">repo</strong> scope<br>
+        6. Copy and paste it below
+      </div>
+      <input class="token-input" id="setup-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" type="password">
+      <button class="btn btn-primary" style="margin-top:12px" onclick="submitSetupToken()">Connect & Load Data</button>
+      <p style="font-size:11px;color:rgba(255,255,255,.5);margin-top:12px">
+        Your token is stored only on this device. It is never sent anywhere except GitHub's own API.
+      </p>
+    </div>
+  </div>`;
+}
+
+async function submitSetupToken(){
+  const token = document.getElementById('setup-token').value.trim();
+  if(!token){ toast('Paste your GitHub token'); return; }
+  const btn = document.querySelector('.setup-screen .btn-primary');
+  btn.textContent = 'Connecting…'; btn.disabled = true;
+  // Verify token works by checking repo access
+  try{
+    const r = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}`, {
+      headers:{ 'Authorization':'token '+token }
+    });
+    if(!r.ok){ btn.textContent='Connect & Load Data'; btn.disabled=false; toast('Token invalid or no repo access'); return; }
+  }catch(e){ btn.textContent='Connect & Load Data'; btn.disabled=false; toast('Network error'); return; }
+
+  setToken(token);
+  btn.textContent = 'Loading your data…';
+  // Load existing data from GitHub (may not exist yet — that's fine)
+  await loadFromGitHub();
+  const maxId2=Math.max(0,...S.accounts.map(a=>a.id),...S.entries.map(e=>e.id),...S.goals.map(g=>g.id),...S.titheEntries.map(t=>t.id));
+  _id=Math.max(_id,maxId2);
+  renderCurrent();
+  fetchRate();
+  toast('Connected! Your data is loaded.');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════════
+function switchTab(tab){
+  S.currentTab=tab;
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.classList.toggle('active',t.dataset.tab===tab);
+  });
+  renderCurrent();
+  document.getElementById('screen').scrollTop=0;
+}
+
+function renderCurrent(){
+  const el=document.getElementById('screen');
+  // Show setup screen if no token configured
+  if(!getToken()){ el.innerHTML=renderSetup(); return; }
+  if(S.currentTab==='home')el.innerHTML=renderHome();
+  else if(S.currentTab==='history')el.innerHTML=renderHistory();
+  else if(S.currentTab==='goals')el.innerHTML=renderGoals();
+  else if(S.currentTab==='tithe')el.innerHTML=renderTithe();
+  if(S.currentTab==='home'||S.currentTab==='history')renderChart();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  HOME SCREEN
+// ═══════════════════════════════════════════════════════════
+function renderHome(){
+  const cur=S.displayCurrency;const sym=cur==='INR'?'₹':'$';
+  const total=totalSavings(cur);
+  const now=Date.now();const weekAgo=now-7*86400000;
+  const thisWeek=S.entries.filter(e=>e.depositDate>=weekAgo&&e.type==='deposit')
+    .reduce((s,e)=>s+convert(e.amount,e.currency,cur),0);
+  const streak=calcStreak();
+  const rateStr=S.rateLastFetch>0
+    ?`1 USD = ₹${S.exchangeRate.toFixed(2)} · ${Date.now()-S.rateLastFetch<3600000?'Live':'Cached'}`
+    :'Fetching rate...';
+
+  let accts='';
+  if(S.accounts.length===0){
+    accts=`<div class="empty"><div class="empty-icon">🏦</div><h3>No accounts yet</h3><p>Tap "Add new" to get started</p></div>`;
+  }else{
+    const rows=S.accounts.map((a,i)=>{
+      const bal=convert(a.balance,a.currency,cur);
+      const pct=total>0?Math.min(100,(bal/total)*100):0;
+      const c=acctColor(a.id);
+      const asym=a.currency==='INR'?'₹':'$';
+      const conv=a.currency!==cur?`<span style="font-size:10px;color:var(--label2)">≈${fmt(bal,cur)}</span>`:'';
+      return `<div class="card-row" onclick="openAccountDetail(${a.id})">
+        <div class="badge" style="background:${c}">${a.name[0].toUpperCase()}</div>
+        <div class="row-info">
+          <div class="row-name">${a.name}<span class="currency-tag" style="background:${c}">${a.currency}</span></div>
+          <div class="pbar-wrap"><div class="pbar-fill" style="background:${c};width:${pct.toFixed(1)}%"></div></div>
+        </div>
+        <div class="row-right">
+          <div class="row-amount">${fmt(a.balance,a.currency)}</div>
+          ${conv}
+        </div>
+      </div>`;
+    }).join('');
+    accts=`<div class="card">${rows}</div>`;
+  }
+
+  return `
+  <div class="hdr">
+    <div class="hdr-row">
+      <h1>Savings</h1>
+      <div class="hdr-actions">
+        <button class="toggle-btn" onclick="toggleCurrency()">${cur==='INR'?'₹ INR':'$ USD'}</button>
+        <button class="icon-btn" onclick="openSettings()">⚙️</button>
+      </div>
+    </div>
+    <div class="hdr-sub">
+      ${rateStr}
+      &nbsp;·&nbsp;
+      <span class="sync-row" style="display:inline-flex">
+        <span class="sync-dot" id="sync-dot" style="background:#8E8E93"></span>
+        <span id="sync-lbl"></span>
+      </span>
+    </div>
+    <div class="hero" onclick="switchTab('history')">
+      <div class="hero-label">Total Savings</div>
+      <div class="hero-amount">${fmt(total,cur)}</div>
+      <div class="hero-pills">
+        <div class="pill">
+          <div class="pill-label">This week</div>
+          <div class="pill-val">${thisWeek>0?fmt(thisWeek,cur):'–'} ${thisWeek>0?'✓':''}</div>
+        </div>
+        <div class="pill">
+          <div class="pill-label">Streak</div>
+          <div class="pill-val">${streak>0?streak+' wk'+( streak!==1?'s':''):'–'}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="section-title" style="margin:0">Accounts</div>
+      <button class="btn btn-primary btn-sm" onclick="openAddAccount()">+ Add new</button>
+    </div>
+    ${accts}
+    <button class="btn btn-primary" style="margin-top:4px" onclick="openAddDeposit()" ${S.accounts.length===0?'disabled':''}>+ Add Deposit</button>
+  </div>`;
+}
+
+function calcStreak(){
+  if(S.entries.filter(e=>e.type==='deposit').length===0)return 0;
+  let count=0;const week=7*86400000;let end=Date.now();let start=end-week;
+  for(let i=0;i<52;i++){
+    const s=start,e=end;
+    if(!S.entries.some(en=>en.type==='deposit'&&en.depositDate>=s&&en.depositDate<=e))break;
+    count++;end=start;start-=week;
+  }
+  return count;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  HISTORY SCREEN  (main feature)
+// ═══════════════════════════════════════════════════════════
+function renderHistory(){
+  const cur=S.displayCurrency;const sym=cur==='INR'?'₹':'$';
+  const now=Date.now();
+  const periodMs={week:7*86400000,month:30*86400000,'3m':90*86400000,all:Infinity};
+  const cutoff=periodMs[S.histPeriod]?now-periodMs[S.histPeriod]:0;
+
+  // Filter entries
+  let filtered=[...S.entries];
+  if(S.histFilter!=='all')filtered=filtered.filter(e=>e.type===S.histFilter);
+  if(S.histPeriod!=='all')filtered=filtered.filter(e=>e.depositDate>=cutoff);
+  if(S.histGoalId!=null){
+    if(S.histGoalId==='none')filtered=filtered.filter(e=>!e.goalId);
+    else filtered=filtered.filter(e=>e.goalId===parseInt(S.histGoalId));
+  }
+  if(S.histSearch){
+    const q=S.histSearch.toLowerCase();
+    filtered=filtered.filter(e=>{
+      const acct=S.accounts.find(a=>a.id===e.accountId);
+      return (acct&&acct.name.toLowerCase().includes(q))||
+             (e.note&&e.note.toLowerCase().includes(q));
+    });
+  }
+  // Sort newest first
+  filtered.sort((a,b)=>b.depositDate-a.depositDate);
+
+  // Summary stats
+  const totalIn=filtered.filter(e=>e.type==='deposit').reduce((s,e)=>s+convert(e.amount,e.currency,cur),0);
+  const totalOut=filtered.filter(e=>e.type==='withdrawal').reduce((s,e)=>s+convert(e.amount,e.currency,cur),0);
+  const net=totalIn-totalOut;
+
+  // Savings chart data (deposits only, all time, for cumulative line)
+  const chartEntries=[...S.entries].filter(e=>e.type==='deposit').sort((a,b)=>a.depositDate-b.depositDate);
+
+  // Group by date
+  const groups={};
+  filtered.forEach(e=>{
+    const key=fmtDateGroup(e.depositDate);
+    if(!groups[key])groups[key]=[];
+    groups[key].push(e);
+  });
+
+  // Goal filter chips
+  const goalChips=[
+    `<button class="filter-chip ${S.histGoalId==null?'on':'off'}" onclick="setGoalFilter(null)">All goals</button>`,
+    `<button class="filter-chip ${S.histGoalId==='none'?'on':'off'}" onclick="setGoalFilter('none')">No goal</button>`,
+    ...S.goals.map(g=>`<button class="filter-chip ${S.histGoalId==g.id?'on':'off'}" onclick="setGoalFilter(${g.id})">${g.emoji} ${g.name}</button>`)
+  ].join('');
+
+  let txRows='';
+  if(filtered.length===0){
+    txRows=`<div class="empty" style="padding:40px 20px"><div class="empty-icon">📭</div><h3>No transactions</h3><p>Try a different filter</p></div>`;
+  }else{
+    Object.entries(groups).forEach(([date,items])=>{
+      txRows+=`<div class="date-group-header">${date}</div><div style="margin:0 16px 8px">`;
+      items.forEach((e,i)=>{
+        const acct=S.accounts.find(a=>a.id===e.accountId);
+        const c=acct?acctColor(acct.id):'#8E8E93';
+        const isD=e.type==='deposit';
+        const sym=e.currency==='INR'?'₹':'$';
+        const dsym=cur==='INR'?'₹':'$';
+        const convAmt=convert(e.amount,e.currency,cur);
+        const showConv=e.currency!==cur;
+        const goal=e.goalId?S.goals.find(g=>g.id===e.goalId):null;
+        const cls=items.length===1?'tx-card solo':i===0?'tx-card':'tx-card'+(i===items.length-1?' last':'');
+        const borderR=items.length===1?'14px':i===0?'14px 14px 0 0':i===items.length-1?'0 0 14px 14px':'0';
+        txRows+=`<div class="${cls}" style="border-radius:${borderR}">
+          <div class="tx-icon" style="background:${isD?c+'22':c+'22'}">${isD?'<span style="color:'+c+'">↑</span>':'<span style="color:var(--red)">↓</span>'}</div>
+          <div class="tx-meta">
+            <div class="tx-name">${acct?acct.name:'Deleted'}</div>
+            ${e.note?`<div class="tx-note">${e.note}</div>`:''}
+            ${goal?`<div class="tx-note" style="color:${c}">🎯 ${goal.name}</div>`:''}
+            <div class="tx-date">${fmtDate(e.depositDate)}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            <div class="tx-amount-main" style="color:${isD?'var(--green)':'var(--red)'}">${isD?'+':'−'}${fmt(e.amount,e.currency)}</div>
+            ${showConv?`<div class="tx-amount-conv">≈ ${fmt(convAmt,cur)}</div>`:''}
+            <div style="display:flex;gap:6px;margin-top:2px">
+              <button style="border:none;background:var(--blue);color:#fff;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;cursor:pointer" onclick="openEditEntry(${e.id})">Edit</button>
+              <button style="border:none;background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;cursor:pointer" onclick="deleteEntry(${e.id})">Delete</button>
+            </div>
+          </div>
+        </div>`;
+      });
+      txRows+='</div>';
+    });
+  }
+
+  return `
+  <div style="background:linear-gradient(180deg,var(--hdr1),var(--hdr2));padding:env(safe-area-inset-top,44px) 20px 16px;color:#fff">
+    <div class="hdr-row" style="margin-bottom:12px">
+      <h1>History</h1>
+      <button class="toggle-btn" onclick="toggleCurrency()">${cur==='INR'?'₹ INR':'$ USD'}</button>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div style="flex:1;background:rgba(255,255,255,.15);border-radius:10px;padding:10px">
+        <div style="font-size:9px;color:rgba(255,255,255,.6)">Total in</div>
+        <div style="font-size:14px;font-weight:700;color:var(--green)">${fmt(totalIn,cur)}</div>
+      </div>
+      <div style="flex:1;background:rgba(255,255,255,.15);border-radius:10px;padding:10px">
+        <div style="font-size:9px;color:rgba(255,255,255,.6)">Total out</div>
+        <div style="font-size:14px;font-weight:700;color:var(--red)">${fmt(totalOut,cur)}</div>
+      </div>
+      <div style="flex:1;background:rgba(255,255,255,.15);border-radius:10px;padding:10px">
+        <div style="font-size:9px;color:rgba(255,255,255,.6)">Net</div>
+        <div style="font-size:14px;font-weight:700;color:#fff">${fmt(net,cur)}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div style="margin:12px 16px;background:var(--card);border-radius:14px;padding:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div style="font-size:13px;font-weight:600">Savings growth</div>
+      <div style="display:flex;gap:4px">
+        ${['week','month','3m','all'].map(p=>`<button style="border:none;border-radius:5px;padding:3px 7px;font-size:10px;font-weight:600;cursor:pointer;background:${S.histPeriod===p?'var(--blue)':'var(--sep)'};color:${S.histPeriod===p?'#fff':'var(--label2)'}" onclick="setPeriod('${p}')">${p==='week'?'1W':p==='month'?'1M':p==='3m'?'3M':'All'}</button>`).join('')}
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="savingsChart"></canvas></div>
+  </div>
+
+  <!-- Filters -->
+  <div class="hist-filters">
+    <button class="filter-chip ${S.histFilter==='all'?'on':'off'}" onclick="setFilter('all')">All</button>
+    <button class="filter-chip ${S.histFilter==='deposit'?'on':'off'}" onclick="setFilter('deposit')">Deposits</button>
+    <button class="filter-chip ${S.histFilter==='withdrawal'?'on':'off'}" onclick="setFilter('withdrawal')">Withdrawals</button>
+    ${goalChips}
+  </div>
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <input class="search-input" type="search" placeholder="Search by account or note…" value="${S.histSearch}" oninput="setSearch(this.value)">
+  </div>
+
+  <div style="padding:0 16px 6px;font-size:12px;color:var(--label2)">${filtered.length} transaction${filtered.length!==1?'s':''}</div>
+
+  ${txRows}
+  <div style="height:8px"></div>`;
+}
+
+function renderChart(){
+  const canvas=document.getElementById('savingsChart');
+  if(!canvas)return;
+  const cur=S.displayCurrency;
+  const now=Date.now();
+  const periodMs={week:7*86400000,month:30*86400000,'3m':90*86400000,all:Infinity};
+  const cutoff=periodMs[S.histPeriod]?now-periodMs[S.histPeriod]:0;
+
+  const deposits=[...S.entries].filter(e=>e.type==='deposit').sort((a,b)=>a.depositDate-b.depositDate);
+  let running=0;
+  const allPoints=deposits.map(e=>{running+=convert(e.amount,e.currency,cur);return{x:e.depositDate,y:running}});
+  const points=S.histPeriod==='all'?allPoints:allPoints.filter(p=>p.x>=cutoff);
+
+  if(window._chart)window._chart.destroy();
+  if(points.length<2){
+    const ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#8E8E93';ctx.font='13px system-ui';ctx.textAlign='center';
+    ctx.fillText('Add deposits to see chart',canvas.width/2,canvas.height/2);
+    return;
+  }
+  window._chart=new Chart(canvas,{
+    type:'line',
+    data:{
+      datasets:[{
+        data:points,
+        borderColor:'#007AFF',borderWidth:2.5,
+        backgroundColor:'rgba(0,122,255,0.08)',fill:true,
+        pointRadius:p=>p.dataIndex===points.length-1?5:0,
+        pointBackgroundColor:'#fff',pointBorderColor:'#007AFF',pointBorderWidth:2,
+        tension:0.3
+      }]
+    },
+    options:{
+      parsing:{xAxisKey:'x',yAxisKey:'y'},
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{
+        callbacks:{
+          label:ctx=>`${cur==='INR'?'₹':'$'}${ctx.parsed.y.toLocaleString('en-IN',{maximumFractionDigits:0})}`
+        }
+      }},
+      scales:{
+        x:{type:'linear',display:false},
+        y:{display:false}
+      }
+    }
+  });
+}
+
+function setFilter(f){S.histFilter=f;renderCurrent()}
+function setPeriod(p){S.histPeriod=p;renderCurrent()}
+function setSearch(v){S.histSearch=v;renderCurrent()}
+function setGoalFilter(id){S.histGoalId=id;renderCurrent()}
+
+// ═══════════════════════════════════════════════════════════
+//  GOALS SCREEN
+// ═══════════════════════════════════════════════════════════
+function renderGoals(){
+  const cur=S.displayCurrency;const sym=cur==='INR'?'₹':'$';
+
+  const goalCards=S.goals.length===0?
+    `<div class="empty"><div class="empty-icon">🎯</div><h3>No goals yet</h3><p>Tap "+ New goal" to get started</p></div>`:
+    S.goals.map(g=>{
+      const saved=Math.max(0,goalSaved(g.id,cur));
+      const target=convert(g.targetAmount,g.targetCurrency,cur);
+      const pct=target>0?Math.min(100,(saved/target)*100):0;
+      const complete=pct>=100;
+      const color=complete?'var(--green)':pct>=75?'var(--orange)':'var(--blue)';
+      const tgtSym=g.targetCurrency==='INR'?'₹':'$';
+      const remaining=Math.max(0,target-saved);
+      const dateStr=new Date(g.targetDate).toLocaleDateString('en-IN',{month:'short',year:'numeric'});
+      return `<div class="goal-card">
+        <div class="goal-top">
+          <div style="display:flex;gap:10px;align-items:center">
+            <span class="goal-emoji">${g.emoji}</span>
+            <div>
+              <div class="goal-name">${g.name}</div>
+              <div class="goal-target">Target by ${dateStr} · ${tgtSym}${g.targetAmount.toLocaleString()}</div>
+            </div>
+          </div>
+          <div class="goal-pct" style="color:${color}">${pct.toFixed(0)}%</div>
+        </div>
+        ${complete?`<div class="goal-complete-banner">🎉 Goal complete!</div>`:''}
+        <div class="goal-bar"><div class="goal-bar-fill" style="background:${color};width:${pct.toFixed(1)}%"></div></div>
+        <div class="goal-stats">
+          <span style="font-weight:600">${fmt(saved,cur)} saved</span>
+          <span style="color:var(--label2)">${fmt(remaining,cur)} to go</span>
+        </div>
+        <div class="goal-actions">
+          <button class="btn btn-outline btn-sm" style="flex:1;color:var(--orange);border-color:var(--orange)" onclick="openWithdrawFromGoal(${g.id})">↑ Withdraw</button>
+          <button class="btn btn-outline btn-sm" style="flex:1;color:var(--red);border-color:var(--red)" onclick="deleteGoalConfirm(${g.id},${complete})">🗑 Delete</button>
+        </div>
+      </div>`;
+    }).join('');
+
+  return `
+  <div class="hdr">
+    <div class="hdr-row">
+      <h1>Goals</h1>
+      <div class="hdr-actions">
+        <button class="toggle-btn" onclick="toggleCurrency()">${cur==='INR'?'₹ INR':'$ USD'}</button>
+        <button class="btn btn-primary btn-sm" onclick="openAddGoal()" style="font-size:13px">+ New goal</button>
+      </div>
+    </div>
+  </div>
+  <div class="section">${goalCards}</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TITHE SCREEN
+// ═══════════════════════════════════════════════════════════
+function renderTithe(){
+  const cur=S.displayCurrency;
+  const totalGiven=S.titheEntries.reduce((s,t)=>s+convert(t.donationAmount,t.paycheckCurrency,cur),0);
+  const now=Date.now();
+  const yearStart=new Date(new Date().getFullYear(),0,1).getTime();
+  const thisYear=S.titheEntries.filter(t=>t.paycheckDate>=yearStart).reduce((s,t)=>s+convert(t.donationAmount,t.paycheckCurrency,cur),0);
+
+  const histRows=S.titheEntries.length===0?
+    `<div class="empty" style="padding:30px"><div class="empty-icon">💜</div><p>No tithe records yet</p></div>`:
+    [...S.titheEntries].sort((a,b)=>b.paycheckDate-a.paycheckDate).map((t,i)=>{
+      const sym=t.paycheckCurrency==='INR'?'₹':'$';
+      const convAmt=t.paycheckCurrency!==cur?`<div style="font-size:10px;color:var(--label2)">≈ ${fmt(convert(t.donationAmount,t.paycheckCurrency,cur),cur)}</div>`:'';
+      return `<div class="card-row" style="border-radius:${S.titheEntries.length===1?'14px':i===0?'14px 14px 0 0':i===S.titheEntries.length-1?'0 0 14px 14px':'0'}">
+        <div style="font-size:20px">💜</div>
+        <div class="row-info">
+          <div class="row-name">${t.donationPercent.toFixed(0)}% of ${sym}${t.paycheckAmount.toLocaleString()}</div>
+          <div class="row-sub">${fmtDate(t.paycheckDate)}</div>
+        </div>
+        <div class="row-right">
+          <div class="row-amount" style="color:var(--purple)">${sym}${t.donationAmount.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+          ${convAmt}
+          <button style="border:none;background:none;color:var(--red);font-size:11px;cursor:pointer;margin-top:2px" onclick="deleteTitheEntry(${t.id})">Delete</button>
+        </div>
+      </div>`;
+    }).join('');
+
+  return `
+  <div class="tithe-hdr">
+    <div class="hdr-row" style="margin-bottom:4px">
+      <h1>Tithe</h1>
+      <button class="toggle-btn" onclick="toggleCurrency()">${cur==='INR'?'₹ INR':'$ USD'}</button>
+    </div>
+    <div style="font-size:12px;color:rgba(255,255,255,.6);margin-bottom:14px">A portion of every paycheck, set aside for good</div>
+    <div style="display:flex;gap:10px">
+      <div style="flex:1;background:rgba(255,255,255,.15);border-radius:10px;padding:10px">
+        <div style="font-size:9px;color:rgba(255,255,255,.6)">Total given</div>
+        <div style="font-size:15px;font-weight:700;color:#fff">${fmt(totalGiven,cur)}</div>
+      </div>
+      <div style="flex:1;background:rgba(255,255,255,.15);border-radius:10px;padding:10px">
+        <div style="font-size:9px;color:rgba(255,255,255,.6)">This year</div>
+        <div style="font-size:15px;font-weight:700;color:#fff">${fmt(thisYear,cur)}</div>
+      </div>
+      <div style="flex:1;background:rgba(255,255,255,.15);border-radius:10px;padding:10px">
+        <div style="font-size:9px;color:rgba(255,255,255,.6)">Paychecks</div>
+        <div style="font-size:15px;font-weight:700;color:#fff">${S.titheEntries.length}</div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <button class="btn btn-primary" style="background:var(--purple);margin-bottom:16px" onclick="openAddTithe()">+ Record new tithe</button>
+    <div class="section-title">History</div>
+    <div class="card">${histRows}</div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ACCOUNT DETAIL (inline sheet)
+// ═══════════════════════════════════════════════════════════
+function openAccountDetail(accountId){
+  const acct=S.accounts.find(a=>a.id===accountId);
+  if(!acct)return;
+  const cur=S.displayCurrency;
+  const c=acctColor(acct.id);
+  const asym=acct.currency==='INR'?'₹':'$';
+  const dsym=cur==='INR'?'₹':'$';
+  const converted=acct.currency!==cur?`<div style="font-size:13px;color:rgba(255,255,255,.6)">≈ ${fmt(convert(acct.balance,acct.currency,cur),cur)}</div>`:'';
+  const entries=[...S.entries].filter(e=>e.accountId===accountId).sort((a,b)=>b.depositDate-a.depositDate);
+  const rows=entries.length===0?
+    `<div class="empty" style="padding:30px"><p>No transactions yet</p></div>`:
+    entries.map((e,i)=>{
+      const isD=e.type==='deposit';
+      const sym=e.currency==='INR'?'₹':'$';
+      const conv=e.currency!==cur?`<div style="font-size:10px;color:var(--label2)">≈ ${fmt(convert(e.amount,e.currency,cur),cur)}</div>`:'';
+      const goal=e.goalId?S.goals.find(g=>g.id===e.goalId):null;
+      const radius=entries.length===1?'14px':i===0?'14px 14px 0 0':i===entries.length-1?'0 0 14px 14px':'0';
+      return `<div class="tx-card" style="border-radius:${radius}">
+        <div class="tx-icon" style="background:${isD?c+'22':c+'22'}">${isD?`<span style="color:${c}">↑</span>`:`<span style="color:var(--red)">↓</span>`}</div>
+        <div class="tx-meta">
+          <div class="tx-name" style="color:${isD?'var(--green)':'var(--red)'}">${isD?'+':'−'}${sym}${e.amount.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+          ${e.note?`<div class="tx-note">${e.note}</div>`:''}
+          ${goal?`<div class="tx-note" style="color:${c}">🎯 ${goal.name}</div>`:''}
+          <div class="tx-date">${fmtDate(e.depositDate)}</div>
+        </div>
+        <div class="tx-amounts">${conv}</div>
+      </div>`;
+    }).join('');
+
+  showSheet(`
+    <div style="background:linear-gradient(180deg,#${acct.id>0?'1B3A6B':'0D2A50'},#0D2A50);margin:-8px -20px 16px;padding:16px 20px;border-radius:12px 12px 0 0;color:#fff">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div>
+          <div style="font-size:20px;font-weight:700">${acct.name}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.6)">${acct.currency} account</div>
+        </div>
+        <button style="background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 12px;border-radius:10px;font-size:13px;cursor:pointer" onclick="closeSheet();openWithdrawFromAccount(${acct.id})">↑ Withdraw</button>
+      </div>
+      <div style="background:rgba(255,255,255,.15);border-radius:14px;padding:14px;text-align:center">
+        <div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:4px">Current Balance</div>
+        <div style="font-size:32px;font-weight:700;letter-spacing:-1px">${asym}${acct.balance.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+        ${converted}
+      </div>
+    </div>
+    <div style="font-size:16px;font-weight:700;margin-bottom:10px">Transaction History (${entries.length})</div>
+    ${rows}
+  `);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SHEETS — ADD / EDIT / DELETE
+// ═══════════════════════════════════════════════════════════
+function showSheet(html){
+  document.getElementById('sheet-content').innerHTML=html;
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('sheet').scrollTop=0;
+}
+function closeSheet(){document.getElementById('overlay').classList.remove('show')}
+function handleOverlayClick(e){if(e.target===document.getElementById('overlay'))closeSheet()}
+
+// --- Add Account ---
+function openAddAccount(){
+  showSheet(`
+    <div class="sheet-title">Add Account</div>
+    <div class="form-group">
+      <label class="form-label">Account name</label>
+      <input class="form-input" id="acc-name" placeholder="e.g. HDFC Savings" oninput="validateAccForm()">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Currency</label>
+      <div class="currency-sel">
+        <button class="cur-btn on" id="cur-INR" onclick="selCur('INR')">₹ INR</button>
+        <button class="cur-btn" id="cur-USD" onclick="selCur('USD')">$ USD</button>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="acc-submit" onclick="submitAccount()" disabled>Add Account</button>
+  `);
+}
+let _selCur='INR';
+function selCur(c){
+  _selCur=c;
+  document.querySelectorAll('.cur-btn').forEach(b=>b.classList.toggle('on',b.id==='cur-'+c));
+}
+function validateAccForm(){
+  const n=document.getElementById('acc-name').value.trim();
+  document.getElementById('acc-submit').disabled=!n;
+}
+function submitAccount(){
+  const name=document.getElementById('acc-name').value.trim();
+  if(!name)return;
+  const dup=S.accounts.some(a=>a.name.toLowerCase()===name.toLowerCase());
+  if(dup){toast('Account name already exists');return;}
+  S.accounts.push({id:uid(),name,currency:_selCur,balance:0,createdAt:Date.now()});
+  save();closeSheet();renderCurrent();toast('Account added');
+}
+
+// --- Add Deposit ---
+let _depGoalId=null,_depAccId=null,_depType='deposit';
+function openAddDeposit(){
+  if(S.accounts.length===0){toast('Add an account first');return;}
+  _depGoalId=null;_depAccId=S.accounts[0].id;_depType='deposit';
+  renderDepositSheet();
+}
+function openAddDepositForGoal(goalId){
+  if(S.accounts.length===0){toast('Add an account first');return;}
+  _depGoalId=goalId;_depAccId=S.accounts[0].id;_depType='deposit';
+  renderDepositSheet();
+}
+function renderDepositSheet(){
+  const acct=S.accounts.find(a=>a.id===_depAccId)||S.accounts[0];
+  const sym=acct.currency==='INR'?'₹':'$';
+  const qas=acct.currency==='INR'?[5000,10000,25000,50000]:[500,1000,1500,2000];
+  const goalOpts=`<option value="">No goal</option>`+S.goals.map(g=>`<option value="${g.id}" ${_depGoalId==g.id?'selected':''}>${g.emoji} ${g.name}</option>`).join('');
+  showSheet(`
+    <div class="sheet-title">${_depType==='deposit'?'New Deposit':'New Withdrawal'}</div>
+    <div style="display:flex;gap:0;margin-bottom:14px">
+      <button class="seg-btn ${_depType==='deposit'?'on':''}" style="flex:1;background:${_depType==='deposit'?'var(--card)':'transparent'};border-radius:8px 0 0 8px;border:1px solid var(--sep)" onclick="_depType='deposit';renderDepositSheet()">Deposit</button>
+      <button class="seg-btn ${_depType==='withdrawal'?'on':''}" style="flex:1;background:${_depType==='withdrawal'?'var(--card)':'transparent'};border-radius:0 8px 8px 0;border:1px solid var(--sep);border-left:none" onclick="_depType='withdrawal';renderDepositSheet()">Withdrawal</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Amount (${sym})</label>
+      <input class="form-input" id="dep-amount" type="number" inputmode="decimal" placeholder="0.00">
+      <div class="quick-amts" style="margin-top:8px">
+        ${qas.map(q=>`<button class="qa" style="background:var(--blue);color:#fff" onclick="document.getElementById('dep-amount').value=${q}">${sym}${q>=1000?(q/1000)+'K':q}</button>`).join('')}
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Account</label>
+      <select class="form-input" id="dep-acct" onchange="_depAccId=parseInt(this.value);renderDepositSheet()">
+        ${S.accounts.map(a=>`<option value="${a.id}" ${a.id===_depAccId?'selected':''}>${a.name} (${a.currency})</option>`).join('')}
+      </select>
+    </div>
+    ${_depType==='deposit'&&S.goals.length>0?`
+    <div class="form-group">
+      <label class="form-label">Tag to goal (optional)</label>
+      <select class="form-input" id="dep-goal" onchange="_depGoalId=this.value?parseInt(this.value):null">${goalOpts}</select>
+    </div>`:''}
+    <div class="form-group">
+      <label class="form-label">Date</label>
+      <input class="form-input" id="dep-date" type="date" value="${toDateVal(Date.now())}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Note (optional)</label>
+      <input class="form-input" id="dep-note" placeholder="Weekly transfer…">
+    </div>
+    <button class="btn ${_depType==='deposit'?'btn-primary':'btn-danger'}" onclick="submitDeposit()">
+      ${_depType==='deposit'?'Add Deposit':'Record Withdrawal'}
+    </button>
+  `);
+}
+function submitDeposit(){
+  const amount=parseFloat(document.getElementById('dep-amount').value);
+  if(!amount||amount<=0){toast('Enter a valid amount');return;}
+  const accId=parseInt(document.getElementById('dep-acct').value);
+  const acct=S.accounts.find(a=>a.id===accId);
+  if(!acct)return;
+  const date=fromDateVal(document.getElementById('dep-date').value)||Date.now();
+  const note=document.getElementById('dep-note')?.value.trim()||'';
+  const goalEl=document.getElementById('dep-goal');
+  const goalId=goalEl&&goalEl.value?parseInt(goalEl.value):null;
+
+  if(_depType==='withdrawal'&&amount>acct.balance){
+    toast('Insufficient balance');return;
+  }
+  const entry={
+    id:uid(),accountId:accId,amount,currency:acct.currency,
+    type:_depType,note,goalId:_depType==='deposit'?goalId:null,
+    depositDate:date,createdAt:Date.now()
+  };
+  S.entries.push(entry);
+  if(_depType==='deposit')acct.balance+=amount;
+  else acct.balance=Math.max(0,acct.balance-amount);
+  save();closeSheet();renderCurrent();
+  toast(_depType==='deposit'?'Deposit recorded':'Withdrawal recorded');
+}
+
+// --- Withdraw from Account ---
+function openWithdrawFromAccount(accountId){
+  _depAccId=accountId;_depType='withdrawal';
+  renderDepositSheet();
+}
+
+// --- Withdraw from Goal ---
+function openWithdrawFromGoal(goalId){
+  if(S.accounts.length===0){toast('Add an account first');return;}
+  _depGoalId=goalId;_depAccId=S.accounts[0].id;_depType='deposit';
+  const g=S.goals.find(g=>g.id===goalId);
+  const saved=Math.max(0,goalSaved(goalId,S.displayCurrency));
+  const sym=S.displayCurrency==='INR'?'₹':'$';
+  showSheet(`
+    <div class="sheet-title">Withdraw from ${g?.name||'Goal'}</div>
+    <div style="font-size:13px;color:var(--label2);margin-bottom:16px">Currently saved: ${fmt(saved,S.displayCurrency)}</div>
+    <div class="form-group">
+      <label class="form-label">Amount (${sym})</label>
+      <input class="form-input" id="gw-amount" type="number" inputmode="decimal" placeholder="0.00" max="${saved.toFixed(2)}">
+      <div style="font-size:11px;color:var(--label2);margin-top:4px">Max: ${fmt(saved,S.displayCurrency)}</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">From account</label>
+      <select class="form-input" id="gw-acct">
+        ${S.accounts.map(a=>`<option value="${a.id}">${a.name} (${a.currency}) — ${a.currency==='INR'?'₹':'$'}${a.balance.toLocaleString('en-IN',{maximumFractionDigits:2})}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Date</label>
+      <input class="form-input" id="gw-date" type="date" value="${toDateVal(Date.now())}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Note (optional)</label>
+      <input class="form-input" id="gw-note" placeholder="Reason for withdrawal…">
+    </div>
+    <button class="btn btn-warning" onclick="submitGoalWithdrawal(${goalId},${saved.toFixed(2)})">Withdraw from Goal</button>
+  `);
+}
+function submitGoalWithdrawal(goalId,maxSaved){
+  const amount=parseFloat(document.getElementById('gw-amount').value);
+  if(!amount||amount<=0){toast('Enter a valid amount');return;}
+  if(amount>maxSaved){toast('Cannot exceed saved amount');return;}
+  const accId=parseInt(document.getElementById('gw-acct').value);
+  const acct=S.accounts.find(a=>a.id===accId);
+  if(!acct)return;
+  const convAmt=convert(amount,S.displayCurrency,acct.currency);
+  if(convAmt>acct.balance){toast('Insufficient account balance');return;}
+  const date=fromDateVal(document.getElementById('gw-date').value)||Date.now();
+  const note=document.getElementById('gw-note').value.trim();
+  S.entries.push({
+    id:uid(),accountId:accId,amount:convAmt,currency:acct.currency,
+    type:'withdrawal',note:note||'Goal withdrawal',goalId,
+    depositDate:date,createdAt:Date.now()
+  });
+  acct.balance=Math.max(0,acct.balance-convAmt);
+  save();closeSheet();renderCurrent();toast('Withdrawal recorded');
+}
+
+// --- Delete Goal ---
+function deleteGoalConfirm(goalId,isComplete){
+  const g=S.goals.find(g=>g.id===goalId);if(!g)return;
+  const saved=goalSaved(goalId,S.displayCurrency);
+  showSheet(`
+    <div class="sheet-title">Delete "${g.name}"?</div>
+    ${isComplete?`
+    <div style="background:rgba(255,59,48,.08);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div style="font-size:14px;font-weight:600;color:var(--red);margin-bottom:6px">Withdraw funds from accounts</div>
+      <div style="font-size:12px;color:var(--label2)">Removes ${fmt(saved,S.displayCurrency)} from your account balances. Use if you've spent or moved this money out.</div>
+    </div>
+    <button class="btn btn-danger" style="margin-bottom:10px" onclick="confirmDeleteGoal(${goalId},true)">Withdraw & delete</button>
+    `:''}
+    <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div style="font-size:14px;font-weight:600;margin-bottom:4px">Remove tracking only</div>
+      <div style="font-size:12px;color:var(--label2)">Money stays in accounts. Deposit history preserved, goal tag removed.</div>
+    </div>
+    <button class="btn btn-outline" style="margin-bottom:10px" onclick="confirmDeleteGoal(${goalId},false)">Remove tracking only</button>
+    <button class="btn btn-outline" onclick="closeSheet()">Cancel</button>
+  `);
+}
+function confirmDeleteGoal(goalId,withdrawFunds){
+  const g=S.goals.find(g=>g.id===goalId);if(!g)return;
+  if(withdrawFunds){
+    const entriesByAccount={};
+    S.entries.filter(e=>e.goalId===goalId).forEach(e=>{
+      if(!entriesByAccount[e.accountId])entriesByAccount[e.accountId]=0;
+      entriesByAccount[e.accountId]+=(e.type==='deposit'?e.amount:-e.amount);
+    });
+    Object.entries(entriesByAccount).forEach(([accId,net])=>{
+      if(net>0){
+        const acct=S.accounts.find(a=>a.id===parseInt(accId));
+        if(acct)acct.balance=Math.max(0,acct.balance-net);
+      }
+    });
+  }
+  S.entries.forEach(e=>{if(e.goalId===goalId)e.goalId=null;});
+  S.goals=S.goals.filter(g=>g.id!==goalId);
+  save();closeSheet();renderCurrent();toast('Goal deleted');
+}
+
+// --- Add Goal ---
+function openAddGoal(){
+  const emojis=['🎯','🏠','✈️','🚗','📱','🎓','💍','🏖️','💰','🎁'];
+  let selectedEmoji='🎯';
+  showSheet(`
+    <div class="sheet-title">New Goal</div>
+    <div class="form-group">
+      <label class="form-label">Pick an icon</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+        ${emojis.map(e=>`<button style="width:36px;height:36px;border-radius:8px;border:2px solid ${e==='🎯'?'var(--blue)':'var(--sep)'};background:transparent;font-size:18px;cursor:pointer" id="em-${e}" onclick="selectEmoji('${e}')">${e}</button>`).join('')}
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Goal name</label>
+      <input class="form-input" id="goal-name" placeholder="e.g. House Fund">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Target amount</label>
+      <div class="form-row">
+        <input class="form-input" id="goal-amount" type="number" inputmode="decimal" placeholder="0.00" style="flex:2">
+        <select class="form-input" id="goal-cur" style="flex:1"><option value="INR">₹ INR</option><option value="USD">$ USD</option></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Target date</label>
+      <input class="form-input" id="goal-date" type="date" min="${toDateVal(Date.now()+86400000)}" value="${toDateVal(Date.now()+365*86400000)}">
+    </div>
+    <button class="btn btn-primary" onclick="submitGoal()">Add new</button>
+  `);
+}
+function selectEmoji(e){
+  document.querySelectorAll('[id^="em-"]').forEach(b=>b.style.borderColor='var(--sep)');
+  const el=document.getElementById('em-'+e);
+  if(el)el.style.borderColor='var(--blue)';
+  window._selectedEmoji=e;
+}
+function submitGoal(){
+  const name=document.getElementById('goal-name').value.trim();
+  const amount=parseFloat(document.getElementById('goal-amount').value);
+  const cur=document.getElementById('goal-cur').value;
+  const dateVal=document.getElementById('goal-date').value;
+  if(!name){toast('Enter a goal name');return;}
+  if(!amount||amount<=0){toast('Enter a target amount');return;}
+  if(!dateVal){toast('Pick a target date');return;}
+  const targetDate=fromDateVal(dateVal);
+  if(targetDate<=Date.now()){toast('Target date must be in the future');return;}
+  S.goals.push({id:uid(),name,emoji:window._selectedEmoji||'🎯',targetAmount:amount,targetCurrency:cur,targetDate,createdAt:Date.now()});
+  save();closeSheet();renderCurrent();toast('Goal created');
+}
+
+// --- Add Tithe ---
+function openAddTithe(){
+  if(S.accounts.length===0){toast('Add an account first');return;}
+  showSheet(`
+    <div class="sheet-title">Record Tithe</div>
+    <div class="form-group">
+      <label class="form-label">Paycheck amount</label>
+      <div class="form-row">
+        <input class="form-input" id="tit-amount" type="number" inputmode="decimal" placeholder="0.00" style="flex:2" oninput="updateTithCalc()">
+        <select class="form-input" id="tit-cur" style="flex:1"><option value="INR">₹ INR</option><option value="USD">$ USD</option></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Donation percentage: <strong id="tit-pct-label">10%</strong></label>
+      <div class="slider-wrap">
+        <input class="slider" id="tit-pct" type="range" min="1" max="30" value="10" oninput="updateTithCalc()" style="accent-color:var(--purple)">
+        <div class="slider-labels"><span>1%</span><span>10%</span><span>20%</span><span>30%</span></div>
+      </div>
+      <div class="donation-box" id="tit-calc-box">
+        <span style="font-size:13px;color:var(--label2)">Donation amount</span>
+        <span style="font-size:18px;font-weight:700;color:var(--purple)" id="tit-calc">—</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">From account</label>
+      <select class="form-input" id="tit-acct">
+        ${S.accounts.map(a=>`<option value="${a.id}">${a.name} (${a.currency})</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Paycheck date</label>
+      <input class="form-input" id="tit-date" type="date" value="${toDateVal(Date.now())}">
+    </div>
+    <button class="btn btn-primary" style="background:var(--purple)" onclick="submitTithe()">Add new</button>
+  `);
+}
+function updateTithCalc(){
+  const amt=parseFloat(document.getElementById('tit-amount')?.value)||0;
+  const pct=parseFloat(document.getElementById('tit-pct')?.value)||10;
+  const cur=document.getElementById('tit-cur')?.value||'INR';
+  const sym=cur==='INR'?'₹':'$';
+  const donation=(amt*pct/100);
+  const el=document.getElementById('tit-calc');
+  const lbl=document.getElementById('tit-pct-label');
+  if(el)el.textContent=sym+donation.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(lbl)lbl.textContent=pct+'%';
+}
+function submitTithe(){
+  const paycheckAmount=parseFloat(document.getElementById('tit-amount').value);
+  if(!paycheckAmount||paycheckAmount<=0){toast('Enter paycheck amount');return;}
+  const pct=parseFloat(document.getElementById('tit-pct').value);
+  const cur=document.getElementById('tit-cur').value;
+  const accId=parseInt(document.getElementById('tit-acct').value);
+  const date=fromDateVal(document.getElementById('tit-date').value)||Date.now();
+  const donation=paycheckAmount*pct/100;
+  S.titheEntries.push({id:uid(),paycheckAmount,paycheckCurrency:cur,donationPercent:pct,donationAmount:donation,accountId:accId,paycheckDate:date,createdAt:Date.now()});
+  save();closeSheet();renderCurrent();toast('Tithe recorded');
+}
+function deleteTitheEntry(id){
+  if(!confirm('Delete this tithe record?'))return;
+  S.titheEntries=S.titheEntries.filter(t=>t.id!==id);
+  save();renderCurrent();toast('Deleted');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EDIT & DELETE TRANSACTIONS
+// ═══════════════════════════════════════════════════════════
+let _editType = 'deposit';
+
+function openEditEntry(entryId){
+  const e = S.entries.find(x=>x.id===entryId);
+  if(!e){ toast('Transaction not found'); return; }
+  _editType = e.type;
+  const acct = S.accounts.find(a=>a.id===e.accountId);
+  const sym = e.currency==='INR'?'₹':'$';
+  const goalOpts = `<option value="">No goal</option>` +
+    S.goals.map(g=>`<option value="${g.id}" ${e.goalId==g.id?'selected':''}>${g.emoji} ${g.name}</option>`).join('');
+
+  showSheet(`
+    <div class="sheet-title">Edit Transaction</div>
+    <div style="display:flex;gap:0;margin-bottom:14px">
+      <button id="edit-dep-btn" class="seg-btn ${_editType==='deposit'?'on':''}"
+        style="flex:1;background:${_editType==='deposit'?'var(--card)':'transparent'};border-radius:8px 0 0 8px;border:1px solid var(--sep)"
+        onclick="_editType='deposit';document.getElementById('edit-dep-btn').style.background='var(--card)';document.getElementById('edit-wdr-btn').style.background='transparent'">
+        Deposit
+      </button>
+      <button id="edit-wdr-btn" class="seg-btn ${_editType==='withdrawal'?'on':''}"
+        style="flex:1;background:${_editType==='withdrawal'?'var(--card)':'transparent'};border-radius:0 8px 8px 0;border:1px solid var(--sep);border-left:none"
+        onclick="_editType='withdrawal';document.getElementById('edit-wdr-btn').style.background='var(--card)';document.getElementById('edit-dep-btn').style.background='transparent'">
+        Withdrawal
+      </button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Amount (${sym})</label>
+      <input class="form-input" id="edit-amount" type="number" inputmode="decimal" value="${e.amount}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Account</label>
+      <select class="form-input" id="edit-acct">
+        ${S.accounts.map(a=>`<option value="${a.id}" ${a.id===e.accountId?'selected':''}>${a.name} (${a.currency})</option>`).join('')}
+      </select>
+    </div>
+    ${S.goals.length>0?`
+    <div class="form-group">
+      <label class="form-label">Goal tag</label>
+      <select class="form-input" id="edit-goal">${goalOpts}</select>
+    </div>`:''}
+    <div class="form-group">
+      <label class="form-label">Date</label>
+      <input class="form-input" id="edit-date" type="date" value="${toDateVal(e.depositDate)}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Note</label>
+      <input class="form-input" id="edit-note" placeholder="Optional note" value="${e.note||''}">
+    </div>
+    <button class="btn btn-primary" onclick="submitEditEntry(${entryId})" style="margin-bottom:10px">Save changes</button>
+    <button class="btn btn-outline" onclick="closeSheet()">Cancel</button>
+  `);
+}
+
+function submitEditEntry(entryId){
+  const entry = S.entries.find(x=>x.id===entryId);
+  if(!entry){ toast('Transaction not found'); return; }
+
+  const newAmount = parseFloat(document.getElementById('edit-amount').value);
+  if(!newAmount||newAmount<=0){ toast('Enter a valid amount'); return; }
+
+  const newAcctId = parseInt(document.getElementById('edit-acct').value);
+  const newAcct   = S.accounts.find(a=>a.id===newAcctId);
+  const newType   = _editType;
+  const newNote   = document.getElementById('edit-note').value.trim();
+  const newDate   = fromDateVal(document.getElementById('edit-date').value)||entry.depositDate;
+  const goalEl    = document.getElementById('edit-goal');
+  const newGoalId = goalEl&&goalEl.value ? parseInt(goalEl.value) : null;
+
+  // Step 1: reverse old transaction effect on old account
+  const oldAcct = S.accounts.find(a=>a.id===entry.accountId);
+  if(oldAcct){
+    if(entry.type==='deposit') oldAcct.balance -= entry.amount;
+    else oldAcct.balance += entry.amount;
+  }
+
+  // Step 2: validate new withdrawal doesn't overdraw
+  if(newType==='withdrawal' && newAcct){
+    if(newAcct.balance < newAmount){
+      // Rollback reversal
+      if(oldAcct){
+        if(entry.type==='deposit') oldAcct.balance += entry.amount;
+        else oldAcct.balance -= entry.amount;
+      }
+      toast('Insufficient balance in selected account'); return;
+    }
+  }
+
+  // Step 3: apply new transaction effect on new account
+  if(newAcct){
+    if(newType==='deposit') newAcct.balance += newAmount;
+    else newAcct.balance = Math.max(0, newAcct.balance - newAmount);
+  }
+
+  // Step 4: update the entry in place
+  entry.amount      = newAmount;
+  entry.accountId   = newAcctId;
+  entry.currency    = newAcct ? newAcct.currency : entry.currency;
+  entry.type        = newType;
+  entry.note        = newNote;
+  entry.depositDate = newDate;
+  entry.goalId      = newType==='deposit' ? newGoalId : null;
+
+  save();
+  closeSheet();
+  renderCurrent();
+  toast('Transaction updated');
+}
+
+function deleteEntry(entryId){
+  const entry = S.entries.find(x=>x.id===entryId);
+  if(!entry) return;
+  const acct = S.accounts.find(a=>a.id===entry.accountId);
+  const sym  = entry.currency==='INR'?'₹':'$';
+  const typeLabel = entry.type==='deposit'?'deposit':'withdrawal';
+
+  showSheet(`
+    <div class="sheet-title">Delete transaction?</div>
+    <div style="background:rgba(255,59,48,.08);border-radius:14px;padding:16px;margin-bottom:20px">
+      <div style="font-size:15px;font-weight:600;color:var(--red)">${entry.type==='deposit'?'+':'−'}${sym}${entry.amount.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      <div style="font-size:13px;color:var(--label2);margin-top:4px">${acct?acct.name:'Unknown account'} · ${fmtDate(entry.depositDate)}</div>
+      ${entry.note?`<div style="font-size:12px;color:var(--label2);margin-top:2px">${entry.note}</div>`:''}
+    </div>
+    <p style="font-size:13px;color:var(--label2);margin-bottom:20px">
+      This will also ${entry.type==='deposit'?'<strong>subtract</strong>':'<strong>add back</strong>'} 
+      ${sym}${entry.amount.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})} 
+      ${entry.type==='deposit'?'from':'to'} <strong>${acct?acct.name:'the account'}</strong>.
+    </p>
+    <button class="btn btn-danger" style="margin-bottom:10px" onclick="confirmDeleteEntry(${entryId})">Delete & adjust balance</button>
+    <button class="btn btn-outline" onclick="closeSheet()">Cancel</button>
+  `);
+}
+
+function confirmDeleteEntry(entryId){
+  const entry = S.entries.find(x=>x.id===entryId);
+  if(!entry){ closeSheet(); return; }
+
+  // Reverse the transaction's effect on the account balance
+  const acct = S.accounts.find(a=>a.id===entry.accountId);
+  if(acct){
+    if(entry.type==='deposit') acct.balance = Math.max(0, acct.balance - entry.amount);
+    else acct.balance += entry.amount;
+  }
+
+  S.entries = S.entries.filter(x=>x.id!==entryId);
+  save();
+  closeSheet();
+  renderCurrent();
+  toast('Transaction deleted');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════════════════════
+function openSettings(){
+  const token = getToken();
+  const tokenDisplay = token ? token.substring(0,8)+'••••••••••••' : 'Not connected';
+  showSheet(`
+    <div class="sheet-title">Settings</div>
+    <div style="font-size:14px;font-weight:600;color:var(--label2);margin-bottom:8px">GITHUB SYNC</div>
+    <div class="card">
+      <div class="card-row" style="cursor:default">
+        <div class="row-info">
+          <div class="row-name">${token?'✅ Connected':'❌ Not connected'}</div>
+          <div class="row-sub">${tokenDisplay}</div>
+        </div>
+        ${token
+          ? `<div style="display:flex;gap:6px">
+               <button style="border:none;background:var(--blue);color:#fff;padding:5px 10px;border-radius:8px;font-size:11px;cursor:pointer" onclick="openUpdateToken()">Update</button>
+               <button style="border:none;background:var(--red);color:#fff;padding:5px 10px;border-radius:8px;font-size:11px;cursor:pointer" onclick="disconnectGitHub()">Disconnect</button>
+             </div>`
+          : `<button style="border:none;background:var(--blue);color:#fff;padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer" onclick="closeSheet();renderCurrent()">Setup</button>`
+        }
+      </div>
+      ${token?`
+      <div class="card-row" style="cursor:default">
+        <div class="row-info">
+          <div class="row-name">Data file</div>
+          <div class="row-sub">krusenal11-collab/nest/data.json</div>
+        </div>
+        <button style="border:none;background:var(--blue);color:#fff;padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer" onclick="forceSyncNow()">Sync now</button>
+      </div>`:''}
+    </div>
+    <hr class="divider">
+    <div style="font-size:14px;font-weight:600;color:var(--label2);margin-bottom:8px">ACCOUNTS</div>
+    <div class="card">
+      ${S.accounts.length===0?`<div class="card-row"><span style="color:var(--label2)">No accounts</span></div>`:
+        S.accounts.map((a)=>{
+          const c=acctColor(a.id);
+          return `<div class="card-row">
+            <div class="badge" style="background:${c}">${a.name[0].toUpperCase()}</div>
+            <div class="row-info"><div class="row-name">${a.name}</div><div class="row-sub">${a.currency}</div></div>
+            <button style="border:none;background:none;color:var(--red);font-size:13px;cursor:pointer" onclick="deleteAccount(${a.id})">Delete</button>
+          </div>`;
+        }).join('')}
+    </div>
+    <hr class="divider">
+    <div style="font-size:14px;font-weight:600;color:var(--label2);margin-bottom:8px">EXCHANGE RATE</div>
+    <div class="card">
+      <div class="card-row">
+        <div class="row-info"><div class="row-name">1 USD = ₹${S.exchangeRate.toFixed(2)}</div><div class="row-sub">${S.rateLastFetch>0?'Last fetched: '+fmtDate(S.rateLastFetch):'Not fetched yet'}</div></div>
+        <button style="border:none;background:var(--blue);color:#fff;padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer" onclick="forceRefreshRate()">Refresh</button>
+      </div>
+    </div>
+    <hr class="divider">
+    <button class="btn btn-danger" onclick="clearAllData()" style="margin-top:8px">Clear all data</button>
+  `);
+}
+function disconnectGitHub(){
+  if(!confirm('Disconnect GitHub sync? Your local data stays but will no longer sync.')) return;
+  localStorage.removeItem('nest_gh_token');
+  _ghFileSha = null;
+  closeSheet();
+  renderCurrent();
+  toast('Disconnected from GitHub');
+}
+
+function openUpdateToken(){
+  showSheet(`
+    <div class="sheet-title">Update GitHub Token</div>
+    <p style="font-size:13px;color:var(--label2);margin-bottom:16px">
+      Your token needs <strong>repo</strong> scope (classic token) or <strong>Contents: Read & Write</strong> (fine-grained token).
+    </p>
+    <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:16px;font-size:12px;color:var(--label2);line-height:1.8">
+      <strong style="color:var(--label)">To get a working token:</strong><br>
+      1. github.com → Settings<br>
+      2. Developer settings → Personal access tokens<br>
+      3. <strong style="color:var(--label)">Tokens (classic)</strong> → Generate new token<br>
+      4. Check the <strong style="color:var(--label)">repo</strong> box (top level)<br>
+      5. Generate and copy
+    </div>
+    <div class="form-group">
+      <label class="form-label">Paste new token</label>
+      <input class="form-input" id="new-token" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="font-family:monospace">
+    </div>
+    <button class="btn btn-primary" onclick="submitUpdatedToken()" style="margin-bottom:10px">Save & Sync</button>
+    <button class="btn btn-outline" onclick="closeSheet()">Cancel</button>
+  `);
+}
+
+async function submitUpdatedToken(){
+  const token = document.getElementById('new-token').value.trim();
+  if(!token){ toast('Paste your token first'); return; }
+  const btn = document.querySelector('#new-token').nextElementSibling;
+  btn.textContent = 'Verifying…'; btn.disabled = true;
+  try{
+    const r = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}`, {
+      headers:{ 'Authorization':'token '+token }
+    });
+    if(!r.ok){ btn.textContent='Save & Sync'; btn.disabled=false; toast('❌ Token invalid or no repo access — check scope'); return; }
+  }catch(e){ btn.textContent='Save & Sync'; btn.disabled=false; toast('Network error'); return; }
+  setToken(token);
+  _ghFileSha = null; // reset cached SHA
+  btn.textContent = 'Syncing…';
+  await syncToGitHub();
+  closeSheet();
+  toast(_syncStatus==='ok' ? '✅ Token updated and data synced!' : '⚠️ Token saved but sync still failing — check error');
+}
+
+async function forceSyncNow(){
+  closeSheet();
+  await syncToGitHub();
+  toast(_syncStatus==='ok'?'Synced successfully!':'Sync failed — check your token');
+}
+function deleteAccount(id){
+  if(!confirm('Delete this account and all its transactions?'))return;
+  S.accounts=S.accounts.filter(a=>a.id!==id);
+  S.entries=S.entries.filter(e=>e.accountId!==id);
+  save();renderCurrent();openSettings();
+}
+async function forceRefreshRate(){
+  try{
+    const r=await fetch('https://api.frankfurter.dev/v2/rate/USD/INR');
+    const d=await r.json();
+    S.exchangeRate=d.rate;S.rateLastFetch=Date.now();save();
+    toast('Rate updated: 1 USD = ₹'+S.exchangeRate.toFixed(2));
+    openSettings();
+  }catch(e){toast('Could not fetch rate — check internet');}
+}
+function clearAllData(){
+  if(!confirm('This will permanently delete ALL accounts, transactions, goals and tithe records. Are you sure?'))return;
+  S.accounts=[];S.entries=[];S.goals=[];S.titheEntries=[];
+  save();closeSheet();renderCurrent();toast('All data cleared');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CURRENCY TOGGLE
+// ═══════════════════════════════════════════════════════════
+function toggleCurrency(){
+  S.displayCurrency=S.displayCurrency==='INR'?'USD':'INR';
+  save();renderCurrent();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SERVICE WORKER
+// ═══════════════════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/nest/sw.js', { scope: '/nest/' })
+    .catch(err => console.error("SW registration failed:", err));
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+load(); // load from localStorage first (instant, works offline)
+const maxId=Math.max(0,...S.accounts.map(a=>a.id),...S.entries.map(e=>e.id),...S.goals.map(g=>g.id),...S.titheEntries.map(t=>t.id));
+_id=Math.max(_id,maxId);
+
+renderCurrent();
+fetchRate();
+
+// If token exists, sync with GitHub on startup
+if(getToken()){
+  loadFromGitHub().then(async loaded => {
+    if(loaded){
+      // GitHub had data — use it (newer, from another device)
+      const maxId2=Math.max(0,...S.accounts.map(a=>a.id),...S.entries.map(e=>e.id),...S.goals.map(g=>g.id),...S.titheEntries.map(t=>t.id));
+      _id=Math.max(_id,maxId2);
+      renderCurrent();
+      setSyncStatus('ok');
+    } else {
+      // data.json doesn't exist yet — push local data up to GitHub now
+      if(S.accounts.length > 0 || S.entries.length > 0){
+        setSyncStatus('syncing');
+        await syncToGitHub();
+      } else {
+        setSyncStatus('ok');
+      }
+    }
+  }).catch(()=>setSyncStatus('error'));
+}
+</script>
+</body>
+</html>
