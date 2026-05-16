@@ -6,6 +6,13 @@
       "currency": "INR",
       "balance": 50000,
       "createdAt": 1778891643796
+    },
+    {
+      "id": 1778892172301,
+      "name": "Chase",
+      "currency": "USD",
+      "balance": 0,
+      "createdAt": 1778892184972
     }
   ],
   "entries": [
@@ -25,5 +32,5 @@
   "titheEntries": [],
   "exchangeRate": 95.85,
   "rateLastFetch": 1778891460915,
-  "lastSaved": 1778891667585
+  "lastSaved": 1778892186991
 }
