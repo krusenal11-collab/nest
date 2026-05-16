@@ -1,0 +1,17 @@
+{
+  "accounts": [
+    {
+      "id": 1778891460910,
+      "name": "HDFC",
+      "currency": "INR",
+      "balance": 0,
+      "createdAt": 1778891643796
+    }
+  ],
+  "entries": [],
+  "goals": [],
+  "titheEntries": [],
+  "exchangeRate": 95.85,
+  "rateLastFetch": 1778891460915,
+  "lastSaved": 1778891645536
+}
