@@ -18,7 +18,7 @@
       "id": 1778892172302,
       "name": "Amex",
       "currency": "USD",
-      "balance": 2500,
+      "balance": 3300,
       "createdAt": 1778892190992
     },
     {
@@ -106,11 +106,22 @@
       "goalId": null,
       "depositDate": 1778137200000,
       "createdAt": 1778892304415
+    },
+    {
+      "id": 1778892172310,
+      "accountId": 1778892172302,
+      "amount": 800,
+      "currency": "USD",
+      "type": "deposit",
+      "note": "",
+      "goalId": null,
+      "depositDate": 1778828400000,
+      "createdAt": 1778892319193
     }
   ],
   "goals": [],
   "titheEntries": [],
   "exchangeRate": 95.85,
   "rateLastFetch": 1778891460915,
-  "lastSaved": 1778892305917
+  "lastSaved": 1778892320695
 }
