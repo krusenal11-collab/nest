@@ -20,6 +20,13 @@
       "currency": "USD",
       "balance": 0,
       "createdAt": 1778892190992
+    },
+    {
+      "id": 1778892172303,
+      "name": "Capital One",
+      "currency": "USD",
+      "balance": 0,
+      "createdAt": 1778892199616
     }
   ],
   "entries": [
@@ -39,5 +46,5 @@
   "titheEntries": [],
   "exchangeRate": 95.85,
   "rateLastFetch": 1778891460915,
-  "lastSaved": 1778892192493
+  "lastSaved": 1778892201118
 }
