@@ -27,6 +27,13 @@
       "currency": "USD",
       "balance": 2800,
       "createdAt": 1778892199616
+    },
+    {
+      "id": 1782432166553,
+      "name": "Rajesh",
+      "currency": "USD",
+      "balance": 0,
+      "createdAt": 1782433147925
     }
   ],
   "entries": [
@@ -189,5 +196,5 @@
   "titheEntries": [],
   "exchangeRate": 94.49,
   "rateLastFetch": 1782432736513,
-  "lastSaved": 1782432738309
+  "lastSaved": 1782433149429
 }
