@@ -32,7 +32,7 @@
       "id": 1782432166553,
       "name": "Rajesh",
       "currency": "USD",
-      "balance": 0,
+      "balance": 1100,
       "createdAt": 1782433147925
     },
     {
@@ -208,11 +208,22 @@
       "goalId": null,
       "depositDate": 1781679600000,
       "createdAt": 1782433207304
+    },
+    {
+      "id": 1782432166556,
+      "accountId": 1782432166553,
+      "amount": 1100,
+      "currency": "USD",
+      "type": "deposit",
+      "note": "",
+      "goalId": null,
+      "depositDate": 1781593200000,
+      "createdAt": 1782433231046
     }
   ],
   "goals": [],
   "titheEntries": [],
   "exchangeRate": 94.49,
   "rateLastFetch": 1782432736513,
-  "lastSaved": 1782433208806
+  "lastSaved": 1782433232548
 }
