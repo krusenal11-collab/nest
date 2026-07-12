@@ -46,7 +46,7 @@
       "id": 1783884279788,
       "name": "Stocks",
       "currency": "USD",
-      "balance": 0,
+      "balance": 1000,
       "createdAt": 1783884556681
     }
   ],
@@ -259,11 +259,22 @@
       "goalId": null,
       "depositDate": 1782802800000,
       "createdAt": 1783884536591
+    },
+    {
+      "id": 1783884279789,
+      "accountId": 1783884279788,
+      "amount": 1000,
+      "currency": "USD",
+      "type": "deposit",
+      "note": "",
+      "goalId": null,
+      "depositDate": 1783062000000,
+      "createdAt": 1783884572413
     }
   ],
   "goals": [],
   "titheEntries": [],
   "exchangeRate": 95.34,
   "rateLastFetch": 1783884279798,
-  "lastSaved": 1783884558184
+  "lastSaved": 1783884573915
 }
