@@ -41,6 +41,13 @@
       "currency": "USD",
       "balance": 300,
       "createdAt": 1782433162134
+    },
+    {
+      "id": 1783884279788,
+      "name": "Stocks",
+      "currency": "USD",
+      "balance": 0,
+      "createdAt": 1783884556681
     }
   ],
   "entries": [
@@ -258,5 +265,5 @@
   "titheEntries": [],
   "exchangeRate": 95.34,
   "rateLastFetch": 1783884279798,
-  "lastSaved": 1783884538095
+  "lastSaved": 1783884558184
 }
