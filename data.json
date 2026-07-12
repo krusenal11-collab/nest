@@ -39,7 +39,7 @@
       "id": 1782432166554,
       "name": "Abrar",
       "currency": "USD",
-      "balance": 1000,
+      "balance": 300,
       "createdAt": 1782433162134
     }
   ],
@@ -241,11 +241,22 @@
       "goalId": null,
       "depositDate": 1782457200000,
       "createdAt": 1782433391443
+    },
+    {
+      "id": 1783884279787,
+      "accountId": 1782432166554,
+      "amount": 700,
+      "currency": "USD",
+      "type": "withdrawal",
+      "note": "",
+      "goalId": null,
+      "depositDate": 1782802800000,
+      "createdAt": 1783884536591
     }
   ],
   "goals": [],
   "titheEntries": [],
   "exchangeRate": 95.34,
   "rateLastFetch": 1783884279798,
-  "lastSaved": 1783884282903
+  "lastSaved": 1783884538095
 }
