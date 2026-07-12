@@ -39,7 +39,7 @@
       "id": 1782432166554,
       "name": "Abrar",
       "currency": "USD",
-      "balance": 0,
+      "balance": 13,
       "createdAt": 1782433162134
     },
     {
@@ -296,7 +296,7 @@
     {
       "id": 1783884279792,
       "accountId": 1782432166554,
-      "amount": 300,
+      "amount": 287,
       "currency": "USD",
       "type": "withdrawal",
       "note": "",
@@ -309,5 +309,5 @@
   "titheEntries": [],
   "exchangeRate": 95.34,
   "rateLastFetch": 1783884279798,
-  "lastSaved": 1783885880169
+  "lastSaved": 1783886361376
 }
