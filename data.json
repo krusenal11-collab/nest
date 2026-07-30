@@ -25,7 +25,7 @@
       "id": 1778892172303,
       "name": "Capital One",
       "currency": "USD",
-      "balance": 5673,
+      "balance": 73,
       "createdAt": 1778892199616
     },
     {
@@ -325,11 +325,22 @@
       "goalId": null,
       "depositDate": 1785394800000,
       "createdAt": 1785452449365
+    },
+    {
+      "id": 1785450553035,
+      "accountId": 1778892172303,
+      "amount": 5600,
+      "currency": "USD",
+      "type": "withdrawal",
+      "note": "",
+      "goalId": null,
+      "depositDate": 1785394800000,
+      "createdAt": 1785452460952
     }
   ],
   "goals": [],
   "titheEntries": [],
   "exchangeRate": 95.67,
   "rateLastFetch": 1785450553082,
-  "lastSaved": 1785452450867
+  "lastSaved": 1785452462454
 }
