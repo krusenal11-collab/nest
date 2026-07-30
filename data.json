@@ -48,6 +48,13 @@
       "currency": "USD",
       "balance": 1000,
       "createdAt": 1783884556681
+    },
+    {
+      "id": 1785450553037,
+      "name": "Robinhood",
+      "currency": "USD",
+      "balance": 0,
+      "createdAt": 1785452533862
     }
   ],
   "entries": [
@@ -353,5 +360,5 @@
   "titheEntries": [],
   "exchangeRate": 95.67,
   "rateLastFetch": 1785450553082,
-  "lastSaved": 1785452520029
+  "lastSaved": 1785452535364
 }
