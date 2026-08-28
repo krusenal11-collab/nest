@@ -4,7 +4,7 @@
       "id": 1778891460910,
       "name": "HDFC",
       "currency": "INR",
-      "balance": 200000,
+      "balance": 0,
       "createdAt": 1778891643796
     },
     {
@@ -394,11 +394,22 @@
       "goalId": null,
       "depositDate": 1785394800000,
       "createdAt": 1785452990406
+    },
+    {
+      "id": 1787940642402,
+      "accountId": 1778891460910,
+      "amount": 200000,
+      "currency": "INR",
+      "type": "withdrawal",
+      "note": "",
+      "goalId": null,
+      "depositDate": 1787900400000,
+      "createdAt": 1787940947269
     }
   ],
   "goals": [],
   "titheEntries": [],
   "exchangeRate": 95.48,
   "rateLastFetch": 1787939995706,
-  "lastSaved": 1787939997505
+  "lastSaved": 1787940949522
 }
