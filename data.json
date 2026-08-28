@@ -11,7 +11,7 @@
       "id": 1778892172301,
       "name": "Chase",
       "currency": "USD",
-      "balance": 1400,
+      "balance": 7530,
       "createdAt": 1778892184972
     },
     {
@@ -405,11 +405,22 @@
       "goalId": null,
       "depositDate": 1787900400000,
       "createdAt": 1787940947269
+    },
+    {
+      "id": 1787940642403,
+      "accountId": 1778892172301,
+      "amount": 6130,
+      "currency": "USD",
+      "type": "deposit",
+      "note": "",
+      "goalId": null,
+      "depositDate": 1788159600000,
+      "createdAt": 1787941039068
     }
   ],
   "goals": [],
   "titheEntries": [],
   "exchangeRate": 95.48,
   "rateLastFetch": 1787939995706,
-  "lastSaved": 1787940949522
+  "lastSaved": 1787941040572
 }
