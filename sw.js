@@ -1,7 +1,7 @@
-// Nest service worker — v12
+// Nest service worker — v13
 // Goal: new versions of the app show up on the next launch (no more stale copies),
 // while the app still opens offline.
-const CACHE = 'nest-v12';
+const CACHE = 'nest-v13';
 const SHELL_URL = '/nest/index.html';
 const SHELL = ['/nest/', SHELL_URL];
 

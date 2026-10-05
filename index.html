@@ -104,6 +104,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 .goal-stats{display:flex;justify-content:space-between;font-size:12px;margin-bottom:12px}
 .goal-actions{display:flex;gap:8px}
 .goal-complete-banner{background:rgba(52,199,89,.1);border-radius:8px;padding:8px;text-align:center;font-size:13px;font-weight:600;color:var(--green);margin-bottom:12px}
+/* Metals */
+.home-seg{padding:4px;border-radius:14px;margin-bottom:14px}
+.home-seg .seg-btn{padding:10px 8px;font-size:14px;font-weight:600;border-radius:11px}
+.metal-badge{width:38px;height:38px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#1b1608;flex-shrink:0}
+.stat{flex:1;background:var(--bg);border-radius:12px;padding:8px 10px}
+.stat-label{font-size:10px;color:var(--label2)}
+.stat-val{font-size:13px;font-weight:700;margin-top:2px}
+.mini-btn{border:none;background:none;font-size:13px;cursor:pointer;padding:4px 6px}
 /* Loans */
 .loan-hdr{background:linear-gradient(180deg,#8E2B22,#5C1712);padding:env(safe-area-inset-top,44px) 20px 24px;color:#fff}
 .loan-badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;margin-left:6px}
@@ -149,7 +157,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 .empty h3{font-size:18px;font-weight:600;color:var(--label);margin-bottom:6px}
 .empty p{font-size:14px}
 /* Toast */
-#toast{position:fixed;bottom:calc(80px + var(--safe-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:rgba(0,0,0,.8);color:#fff;padding:8px 18px;border-radius:20px;font-size:13px;opacity:0;transition:all .3s;z-index:300;pointer-events:none;white-space:nowrap}
+#toast{position:fixed;bottom:calc(80px + var(--safe-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:rgba(0,0,0,.8);color:#fff;padding:8px 18px;border-radius:20px;font-size:13px;opacity:0;transition:all .3s;z-index:300;pointer-events:none;white-space:normal;text-align:center;max-width:calc(100vw - 32px);line-height:1.35}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 /* Sync status */
 .sync-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px}
@@ -289,6 +297,9 @@ html:not([data-theme="classic"]) #toast{background:rgba(14,18,38,.88);border:1px
 html:not([data-theme="classic"]) .setup-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
 html:not([data-theme="classic"]) .setup-screen{background:transparent}
 
+html:not([data-theme="classic"]) .home-seg{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10)}
+html:not([data-theme="classic"]) .stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09)}
+html:not([data-theme="classic"]) .metal-badge{box-shadow:0 6px 16px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.5)}
 /* motion */
 @keyframes sheen{to{transform:translateX(120%)}}
 @keyframes sheetUp{from{transform:translateY(46px);opacity:.4}to{transform:none;opacity:1}}
@@ -344,6 +355,9 @@ html:not([data-theme="classic"]) #screen.anim .section>*:nth-child(5){animation-
 const GH_OWNER = 'krusenal11-collab';
 const GH_REPO  = 'nest-data';   // PRIVATE repo that holds data.json (the public 'nest' repo only serves the app)
 const GH_FILE  = 'data.json';
+const PRICES_REPO = 'nest-prices';          // 2nd PRIVATE repo: only the price-fetch workflow + prices.json live there
+const PRICES_WF   = 'fetch-prices.yml';
+const PRICES_FILE = 'prices.json';
 const GH_API   = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`;
 
 function getToken(){ return localStorage.getItem('nest_gh_token') || '' }
@@ -369,6 +383,7 @@ function setSyncStatus(s){
 // ═══════════════════════════════════════════════════════════
 const S = {
   accounts:[],entries:[],goals:[],titheEntries:[],loans:[],showSettledLoans:false,
+  metalLots:[],metalPrices:null,homeView:'accounts',
   displayCurrency:'INR',exchangeRate:83.5,rateLastFetch:0,
   currentTab:'home',
   histFilter:'all',histPeriod:'all',histSearch:'',histGoalId:null
@@ -386,7 +401,8 @@ function openAccts(){return S.accounts.filter(a=>!a.closed)}
 function closedAccts(){return S.accounts.filter(a=>a.closed)}
 
 // Keys that are data (synced to GitHub) vs UI state (local only)
-const DATA_KEYS = ['accounts','entries','goals','titheEntries','loans','exchangeRate','rateLastFetch'];
+// metalPrices is deliberately NOT here: prices stay on this device and never create sync commits
+const DATA_KEYS = ['accounts','entries','goals','titheEntries','loans','metalLots','exchangeRate','rateLastFetch'];
 
 function dataSnapshot(){
   const d = {};
@@ -551,8 +567,9 @@ function fmtDateGroup(ts){
 }
 
 function toDateVal(ts){
-  const d=new Date(ts);
-  return d.toISOString().split('T')[0];
+  const d=new Date(ts); // local calendar date (matches fromDateVal, which reads local midnight)
+  const p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
 }
 
 function fromDateVal(s){
@@ -605,8 +622,8 @@ function renderSetup(){
         1. Go to <strong style="color:#fff">github.com → Settings</strong><br>
         2. Scroll to <strong style="color:#fff">Developer settings</strong><br>
         3. <strong style="color:#fff">Personal access tokens → Fine-grained tokens</strong><br>
-        4. <strong style="color:#fff">Only select repositories</strong> → <strong style="color:#fff">${GH_REPO}</strong><br>
-        5. Permissions → <strong style="color:#fff">Contents: Read and write</strong><br>
+        4. <strong style="color:#fff">Only select repositories</strong> → <strong style="color:#fff">${GH_REPO}</strong> + <strong style="color:#fff">${PRICES_REPO}</strong><br>
+        5. Permissions → <strong style="color:#fff">Contents</strong> and <strong style="color:#fff">Actions</strong>: Read and write<br>
         6. Generate, copy and paste it below
       </div>
       <input class="token-input" id="setup-token" placeholder="github_pat_xxxxxxxxxxxx" type="password">
@@ -637,7 +654,7 @@ async function submitSetupToken(){
   const res = await loadFromGitHub();
   if(res==='error'){ toast('⚠️ '+_ghError); }
   else if(res==='missing' && (S.accounts.length>0||S.entries.length>0)){ await syncToGitHub(); }
-  const maxId2=Math.max(0,...S.accounts.map(a=>a.id),...S.entries.map(e=>e.id),...S.goals.map(g=>g.id),...S.titheEntries.map(t=>t.id),...(S.loans||[]).flatMap(l=>[l.id,...(l.payments||[]).map(p=>p.id)]));
+  const maxId2=Math.max(0,...S.accounts.map(a=>a.id),...S.entries.map(e=>e.id),...S.goals.map(g=>g.id),...S.titheEntries.map(t=>t.id),...(S.loans||[]).flatMap(l=>[l.id,...(l.payments||[]).map(p=>p.id)]),...(S.metalLots||[]).map(m=>m.id));
   _id=Math.max(_id,maxId2);
   renderCurrent();
   fetchRate();
@@ -759,13 +776,17 @@ function renderHome(){
     </div>
   </div>
   <div class="section">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div class="section-title" style="margin:0">Accounts</div>
+    <div class="seg-ctrl home-seg">
+      <button class="seg-btn ${S.homeView!=='metals'?'on':''}" onclick="setHomeView('accounts')">Accounts</button>
+      <button class="seg-btn ${S.homeView==='metals'?'on':''}" onclick="setHomeView('metals')">Metals</button>
+    </div>
+    ${S.homeView==='metals'?renderMetals():`
+    <div style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:10px">
       <button class="btn btn-primary btn-sm" onclick="openAddAccount()">+ Add new</button>
     </div>
     ${accts}
     <button class="btn btn-primary" style="margin-top:4px" onclick="openAddDeposit()" ${oa.length===0?'disabled':''}>+ Add Deposit</button>
-    ${closedHtml}
+    ${closedHtml}`}
   </div>`;
 }
 
@@ -1986,6 +2007,360 @@ function deleteLoan(id){
   save();closeSheet();renderCurrent();toast('Loan deleted');
 }
 
+
+// ═══════════════════════════════════════════════════════════
+//  METALS — holdings (synced, private) + prices (this device only)
+// ═══════════════════════════════════════════════════════════
+const OZ_G=31.1034768; // grams per troy ounce
+const METALS={
+  gold:{name:'Gold',sym:'Au',color:'#F5C451',defPurity:0.999,
+        purities:[['24K · 99.9%',0.999],['22K · 91.6%',0.916],['21K · 87.5%',0.875],['18K · 75%',0.75],['14K · 58.5%',0.585]]},
+  silver:{name:'Silver',sym:'Ag',color:'#C4CCDA',defPurity:0.999,
+        purities:[['999 fine',0.999],['925 sterling',0.925],['900 coin',0.9],['800',0.8]]},
+  platinum:{name:'Platinum',sym:'Pt',color:'#8FD6E8',defPurity:0.999,
+        purities:[['999',0.999],['950',0.95],['900',0.9]]}
+};
+const UNITS={g:{label:'Grams',g:1},kg:{label:'Kilograms',g:1000},oz:{label:'Troy ounces',g:OZ_G},tola:{label:'Tola',g:11.6638038}};
+let _lotMetal='gold';
+
+function usd(n){return '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function fmtQty(n){return n.toLocaleString('en-US',{maximumFractionDigits:3})}
+function ago(ts){
+  const m=Math.round((Date.now()-ts)/60000);
+  if(m<1)return 'just now';if(m<60)return m+' min ago';
+  const h=Math.round(m/60);if(h<24)return h+' h ago';
+  return Math.round(h/24)+' d ago';
+}
+function metalPrice(m){const P=S.metalPrices;return P&&P[m]>0?P[m]:null}
+function lotGrams(l){return l.qty*UNITS[l.unit].g}
+function lotFineOz(l){return lotGrams(l)*l.purity/OZ_G}
+function lotValueUSD(l){const p=metalPrice(l.metal);return p==null?null:lotFineOz(l)*p}
+function purityLabel(l){
+  const hit=METALS[l.metal].purities.find(x=>Math.abs(x[1]-l.purity)<1e-9);
+  return hit?hit[0]:(l.purity*100).toFixed(2).replace(/\.?0+$/,'')+'%';
+}
+function plText(diff,pct,cur,stack){
+  const up=diff>=0;
+  const pctTxt=pct==null?'':(up?'+':'−')+Math.abs(pct).toFixed(1)+'%';
+  return `<span style="color:${up?'var(--green)':'var(--red)'}">${up?'+':'−'}${fmt(Math.abs(diff),cur)}${pct==null?'':(stack?'<br><span style="font-size:11px;font-weight:600">'+pctTxt+'</span>':' ('+pctTxt+')')}</span>`;
+}
+function metalTotals(m){
+  const cur=S.displayCurrency;
+  const lots=(S.metalLots||[]).filter(l=>l.metal===m);
+  const price=metalPrice(m);
+  let grams=0,valUSD=0,inv=0,valInv=0,hasCost=false;
+  lots.forEach(l=>{
+    grams+=lotGrams(l);
+    const v=lotValueUSD(l);
+    if(v!=null)valUSD+=v;
+    if(l.cost>0&&v!=null){hasCost=true;inv+=convert(l.cost,l.costCur,cur);valInv+=convert(v,'USD',cur);}
+  });
+  return {lots,grams,valUSD:price==null?null:valUSD,inv,valInv,hasCost,price};
+}
+
+function setHomeView(v){
+  S.homeView=v;
+  localStorage.setItem('nest_v1',JSON.stringify(S)); // UI flag only — no sync
+  renderCurrent();
+}
+
+let _fetchingPrices=false,_fetchMsg='';
+function priceStatusHtml(){
+  const P=S.metalPrices;
+  if(!P||!P.ts)return `<span style="color:var(--label2)">No prices yet — tap “Fetch live prices”</span>`;
+  const stale=Date.now()-P.ts>24*3600*1000;
+  const when=new Date(P.ts).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  return `<span style="color:${stale?'var(--orange)':'var(--label2)'}">Prices as of ${when} (${ago(P.ts)})${P.manual?' · entered manually':''}${stale?' · out of date':''}</span>`;
+}
+
+function renderMetals(){
+  const cur=S.displayCurrency;
+  const keys=['gold','silver','platinum'];
+  const t={};keys.forEach(k=>t[k]=metalTotals(k));
+  const anyLots=(S.metalLots||[]).length>0;
+  let total=0,priced=false,inv=0,valInv=0,hasPL=false;
+  keys.forEach(k=>{
+    if(t[k].valUSD!=null&&t[k].lots.length){priced=true;total+=convert(t[k].valUSD,'USD',cur);}
+    if(t[k].hasCost){hasPL=true;inv+=t[k].inv;valInv+=t[k].valInv;}
+  });
+  const totalTxt=!anyLots?fmt(0,cur):(priced?fmt(total,cur):'—');
+
+  const cards=keys.map(k=>{
+    const M=METALS[k],x=t[k];
+    let right,sub;
+    if(x.lots.length===0){right=`<div class="row-amount" style="color:var(--label2)">—</div>`;sub='No holdings yet';}
+    else{
+      sub=`${fmtQty(x.grams)} g · ${x.lots.length} ${x.lots.length===1?'holding':'holdings'}`;
+      if(x.valUSD==null)right=`<div class="row-amount" style="color:var(--label2)">No price</div>`;
+      else{
+        const diff=x.valInv-x.inv;
+        right=`<div class="row-amount">${fmt(convert(x.valUSD,'USD',cur),cur)}</div>`+
+              (x.hasCost?`<div style="font-size:11px">${plText(diff,x.inv>0?diff/x.inv*100:null,cur)}</div>`:'');
+      }
+    }
+    return `<div class="card"><div class="card-row" onclick="openMetalDetail('${k}')">
+      <div class="metal-badge" style="background:${M.color}">${M.sym}</div>
+      <div class="row-info">
+        <div class="row-name">${M.name}</div>
+        <div class="row-sub">${sub}</div>
+        <div class="row-sub">${x.price!=null?usd(x.price)+' / troy oz':'no price yet'}</div>
+      </div>
+      <div class="row-right">${right}</div>
+    </div></div>`;
+  }).join('');
+
+  return `
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+      <button class="btn btn-primary btn-sm" onclick="openAddLot()">+ Add holding</button>
+    </div>
+    <div class="card" style="padding:16px">
+      <div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--label2)">Metals value</div>
+      <div style="font-size:32px;font-weight:700;letter-spacing:-1px;margin-top:4px">${totalTxt}</div>
+      <div style="font-size:11px;margin-top:6px">${priceStatusHtml()}</div>
+      ${hasPL?`<div style="display:flex;gap:8px;margin-top:12px">
+        <div class="stat"><div class="stat-label">Invested</div><div class="stat-val">${fmt(inv,cur)}</div></div>
+        <div class="stat"><div class="stat-label">Gain / loss</div><div class="stat-val">${plText(valInv-inv,inv>0?(valInv-inv)/inv*100:null,cur,true)}</div></div>
+      </div>
+      ${(S.metalLots||[]).some(l=>!(l.cost>0))?`<div style="font-size:10px;color:var(--label2);margin-top:8px">Gain / loss counts only holdings where you entered a price paid.</div>`:''}`:''}
+    </div>
+    <button class="btn btn-primary" id="fetch-btn" style="margin-bottom:6px" onclick="fetchMetalPrices()" ${_fetchingPrices?'disabled':''}>${_fetchingPrices?esc(_fetchMsg||'Working…'):'Fetch live prices'}</button>
+    <div style="text-align:center;margin-bottom:14px"><button class="mini-btn" style="color:var(--label2)" onclick="openManualPrices()">Set prices manually</button></div>
+    ${cards}
+    <div style="font-size:11px;color:var(--label2);text-align:center;margin-top:2px">US spot prices in USD per troy ounce; values use your INR/USD rate.</div>`;
+}
+
+// ── Holding detail (one metal) ───────────────────────────────
+function openMetalDetail(m){
+  const M=METALS[m],x=metalTotals(m),cur=S.displayCurrency;
+  const lots=[...x.lots].sort((a,b)=>b.date-a.date);
+  const perGram=x.price!=null?x.price/OZ_G:null;
+  const rows=lots.length===0?`<div class="empty" style="padding:24px"><p>No holdings yet</p></div>`:
+    `<div class="card">${lots.map(l=>{
+      const v=lotValueUSD(l);
+      const val=v==null?'—':fmt(convert(v,'USD',cur),cur);
+      let pl='';
+      if(l.cost>0&&v!=null){const c=convert(l.cost,l.costCur,cur),d=convert(v,'USD',cur)-c;pl=`<div style="font-size:11px">${plText(d,c>0?d/c*100:null,cur)}</div>`;}
+      return `<div class="card-row" style="cursor:default;align-items:flex-start">
+        <div class="row-info">
+          <div class="row-name">${fmtQty(l.qty)} ${l.unit==='oz'?'oz t':l.unit} · ${purityLabel(l)}</div>
+          <div class="row-sub">${fmtDate(l.date)}${l.cost>0?' · paid '+fmt(l.cost,l.costCur):''}${l.note?' · '+esc(l.note):''}</div>
+          <div style="margin-top:4px"><button class="mini-btn" style="color:var(--blue);padding-left:0" onclick="openEditLot(${l.id})">Edit</button><button class="mini-btn" style="color:var(--red)" onclick="deleteLot(${l.id})">Delete</button></div>
+        </div>
+        <div class="row-right"><div class="row-amount">${val}</div>${pl}</div>
+      </div>`;}).join('')}</div>`;
+  showSheet(`
+    <div class="sheet-hero" style="background:linear-gradient(180deg,#5a4a12,#2d2508);margin:-8px -20px 16px;padding:16px 20px;border-radius:12px 12px 0 0;color:#fff">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div class="metal-badge" style="background:${M.color}">${M.sym}</div>
+        <div><div style="font-size:20px;font-weight:700">${M.name}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.65)">${x.price!=null?usd(x.price)+' / oz · '+usd(perGram)+' / g (pure)':'No price yet'}</div></div>
+      </div>
+      <div style="background:rgba(255,255,255,.15);border-radius:14px;padding:14px;text-align:center">
+        <div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:4px">${fmtQty(x.grams)} g in total</div>
+        <div style="font-size:30px;font-weight:700;letter-spacing:-1px">${x.valUSD==null?'—':fmt(convert(x.valUSD,'USD',cur),cur)}</div>
+        ${x.hasCost?`<div style="font-size:12px;margin-top:6px">${plText(x.valInv-x.inv,x.inv>0?(x.valInv-x.inv)/x.inv*100:null,cur)} vs paid ${fmt(x.inv,cur)}${x.lots.some(l=>!(l.cost>0))?'<div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:2px">on holdings with a price paid</div>':''}</div>`:''}
+      </div>
+    </div>
+    <button class="btn btn-primary" style="margin-bottom:16px" onclick="openAddLot('${m}')">+ Add ${M.name.toLowerCase()} holding</button>
+    <div style="font-size:16px;font-weight:700;margin-bottom:10px">Holdings (${lots.length})</div>
+    ${rows}
+  `);
+}
+
+// ── Add / edit a holding ─────────────────────────────────────
+function purityOptions(m,selected){
+  const list=METALS[m].purities;
+  const hit=list.some(x=>Math.abs(x[1]-selected)<1e-9);
+  return list.map(x=>`<option value="${x[1]}" ${hit&&Math.abs(x[1]-selected)<1e-9?'selected':''}>${x[0]}</option>`).join('')+
+    `<option value="custom" ${hit?'':'selected'}>Custom %…</option>`;
+}
+function lotFormHtml(l){
+  const ed=!!l,m=_lotMetal;
+  const custom=ed&&!METALS[m].purities.some(x=>Math.abs(x[1]-l.purity)<1e-9);
+  const curSel=ed&&l.cost?l.costCur:S.displayCurrency;
+  return `
+    <div class="form-group"><label class="form-label">Metal</label>
+      <div class="seg-ctrl" style="margin-bottom:0">${['gold','silver','platinum'].map(k=>`<button class="seg-btn ${k===m?'on':''}" id="lm-${k}" onclick="lotMetalChanged('${k}')">${METALS[k].name}</button>`).join('')}</div>
+    </div>
+    <div class="form-group"><label class="form-label">Quantity</label>
+      <div class="form-row">
+        <input class="form-input" id="lot-qty" type="number" inputmode="decimal" placeholder="0" style="flex:2" value="${ed?l.qty:''}">
+        <select class="form-input" id="lot-unit" style="flex:1.4">${Object.keys(UNITS).map(u=>`<option value="${u}" ${ed&&l.unit===u?'selected':''}>${UNITS[u].label}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Purity</label>
+      <select class="form-input" id="lot-purity" onchange="purityChanged()">${purityOptions(m,ed?l.purity:METALS[m].defPurity)}</select>
+      <div id="lot-purity-custom-wrap" style="display:${custom?'block':'none'};margin-top:8px">
+        <input class="form-input" id="lot-purity-custom" type="number" inputmode="decimal" placeholder="Purity in %, e.g. 91.6" value="${custom?(l.purity*100):''}">
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Date</label>
+      <input class="form-input" id="lot-date" type="date" value="${toDateVal(ed?l.date:Date.now())}">
+    </div>
+    <div class="form-group"><label class="form-label">Total price paid (optional — shows gain / loss)</label>
+      <div class="form-row">
+        <input class="form-input" id="lot-cost" type="number" inputmode="decimal" placeholder="0.00" style="flex:2" value="${ed&&l.cost?l.cost:''}">
+        <select class="form-input" id="lot-cost-cur" style="flex:1"><option value="INR" ${curSel==='INR'?'selected':''}>₹ INR</option><option value="USD" ${curSel==='USD'?'selected':''}>$ USD</option></select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Note (optional)</label>
+      <input class="form-input" id="lot-note" placeholder="e.g. Coins, bought at the jeweller" value="${ed?esc(l.note||''):''}">
+    </div>`;
+}
+function openAddLot(metal){
+  _lotMetal=metal||'gold';
+  showSheet(`<div class="sheet-title">Add holding</div>${lotFormHtml(null)}<button class="btn btn-primary" onclick="submitLot()">Save holding</button>`);
+}
+function openEditLot(id){
+  const l=(S.metalLots||[]).find(x=>x.id===id);if(!l)return;
+  _lotMetal=l.metal;
+  showSheet(`<div class="sheet-title">Edit holding</div>${lotFormHtml(l)}
+    <button class="btn btn-primary" onclick="submitLot(${id})">Save changes</button>
+    <button class="btn btn-outline" style="margin-top:10px" onclick="openMetalDetail('${l.metal}')">Cancel</button>`);
+}
+function lotMetalChanged(m){
+  _lotMetal=m;
+  ['gold','silver','platinum'].forEach(k=>{const b=document.getElementById('lm-'+k);if(b)b.classList.toggle('on',k===m);});
+  const sel=document.getElementById('lot-purity');
+  if(sel){sel.innerHTML=purityOptions(m,METALS[m].defPurity);purityChanged();}
+}
+function purityChanged(){
+  const v=document.getElementById('lot-purity').value;
+  document.getElementById('lot-purity-custom-wrap').style.display=v==='custom'?'block':'none';
+}
+function submitLot(editId){
+  const qty=parseFloat(document.getElementById('lot-qty').value);
+  if(!(qty>0)){toast('Enter the quantity');return;}
+  const unit=document.getElementById('lot-unit').value;
+  const pv=document.getElementById('lot-purity').value;
+  let purity;
+  if(pv==='custom'){
+    const pct=parseFloat(document.getElementById('lot-purity-custom').value);
+    if(!(pct>0&&pct<=100)){toast('Enter a purity between 0 and 100 %');return;}
+    purity=pct/100;
+  }else purity=parseFloat(pv);
+  const date=fromDateVal(document.getElementById('lot-date').value)||Date.now();
+  const costRaw=document.getElementById('lot-cost').value.trim();
+  let cost=null;
+  if(costRaw!==''){cost=parseFloat(costRaw);if(!(cost>0)){toast('Price paid must be above 0');return;}}
+  const costCur=document.getElementById('lot-cost-cur').value;
+  const note=document.getElementById('lot-note').value.trim();
+  if(!S.metalLots)S.metalLots=[];
+  if(editId){
+    const l=S.metalLots.find(x=>x.id===editId);if(!l)return;
+    Object.assign(l,{metal:_lotMetal,qty,unit,purity,date,cost,costCur,note});
+    save();renderCurrent();openMetalDetail(l.metal);toast('Holding updated');
+  }else{
+    S.metalLots.push({id:uid(),metal:_lotMetal,qty,unit,purity,date,cost,costCur,note,createdAt:Date.now()});
+    save();closeSheet();renderCurrent();toast('Holding added');
+  }
+}
+function deleteLot(id){
+  const l=(S.metalLots||[]).find(x=>x.id===id);if(!l)return;
+  if(!confirm('Delete this '+METALS[l.metal].name.toLowerCase()+' holding ('+fmtQty(l.qty)+' '+l.unit+')? This cannot be undone.'))return;
+  S.metalLots=S.metalLots.filter(x=>x.id!==id);
+  save();renderCurrent();openMetalDetail(l.metal);toast('Holding deleted');
+}
+
+// ── Manual prices (always works, even if GitHub or the price source is down) ──
+function openManualPrices(){
+  const P=S.metalPrices||{};
+  showSheet(`
+    <div class="sheet-title">Set prices manually</div>
+    <p style="font-size:13px;color:var(--label2);margin-bottom:14px">US spot price in <strong>USD per troy ounce</strong>. Leave a metal blank to keep its current price.</p>
+    ${['gold','silver','platinum'].map(k=>`<div class="form-group"><label class="form-label">${METALS[k].name}</label>
+      <input class="form-input" id="mp-${k}" type="number" inputmode="decimal" placeholder="${P[k]>0?P[k]:'0.00'}"></div>`).join('')}
+    <button class="btn btn-primary" onclick="submitManualPrices()">Save prices</button>`);
+}
+function submitManualPrices(){
+  const P={...(S.metalPrices||{})};let n=0;
+  for(const k of ['gold','silver','platinum']){
+    const raw=document.getElementById('mp-'+k).value.trim();
+    if(raw==='')continue;
+    const v=parseFloat(raw);
+    if(!(v>0)){toast('Prices must be above 0');return;}
+    P[k]=v;n++;
+  }
+  if(n===0){toast('Enter at least one price');return;}
+  P.ts=Date.now();P.source='manual';P.manual=true;
+  S.metalPrices=P;
+  localStorage.setItem('nest_v1',JSON.stringify(S));
+  closeSheet();renderCurrent();toast('Prices saved');
+}
+
+// ── Fetch live prices: the app only asks GITHUB to run a workflow in the private nest-prices repo.
+//    GitHub's server downloads the prices, so the price service never sees this phone. ──
+let _pollMs=4000,_pollMaxMs=95000;
+const _sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function fetchUi(msg){
+  _fetchMsg=msg;
+  const b=document.getElementById('fetch-btn');
+  if(b){b.disabled=_fetchingPrices;b.textContent=_fetchingPrices?msg:'Fetch live prices';}
+}
+async function fetchMetalPrices(){
+  if(_fetchingPrices)return;
+  if(!getToken()){toast('Connect GitHub first (Settings)');return;}
+  _fetchingPrices=true;fetchUi('Asking GitHub…');
+  const base=`https://api.github.com/repos/${GH_OWNER}/${PRICES_REPO}`;
+  const hdr={'Authorization':'token '+getToken(),'Accept':'application/vnd.github+json'};
+  const reqId='r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  let result='';
+  try{
+    // which branch to run on
+    let ref='main';
+    try{const rr=await fetch(base,{headers:hdr,cache:'no-store'});if(rr.ok){const j=await rr.json();if(j.default_branch)ref=j.default_branch;}}catch(e){}
+    const d=await fetch(`${base}/actions/workflows/${PRICES_WF}/dispatches`,{
+      method:'POST',headers:{...hdr,'Content-Type':'application/json'},body:JSON.stringify({ref,inputs:{request_id:reqId}})});
+    if(d.status!==204){
+      result=d.status===401?'GitHub rejected your token'
+        :d.status===403?'Your token needs “Actions: Read and write” on '+PRICES_REPO
+        :d.status===404?'Cannot find '+PRICES_REPO+' or its “Fetch metal prices” workflow — check the setup steps'
+        :d.status===422?'GitHub could not start the workflow — check that fetch-prices.yml is on the main branch'
+        :'GitHub error '+d.status;
+      throw new Error(result);
+    }
+    const t0=Date.now();
+    result='';
+    while(Date.now()-t0<_pollMaxMs){
+      await _sleep(_pollMs);
+      fetchUi('Fetching… '+Math.round((Date.now()-t0)/1000)+'s');
+      // 1) has the workflow written our prices.json yet?
+      try{
+        const r=await fetch(`${base}/contents/${PRICES_FILE}`,{headers:hdr,cache:'no-store'});
+        if(r.ok){
+          const meta=await r.json();
+          const p=JSON.parse(decodeURIComponent(escape(atob((meta.content||'').replace(/\s/g,'')))));
+          if(p.requestId===reqId){
+            const g=+p.gold,sv=+p.silver,pt=+p.platinum;
+            if(!(g>0&&sv>0&&pt>0))throw new Error('GitHub returned prices in an unexpected format');
+            S.metalPrices={gold:g,silver:sv,platinum:pt,ts:Date.parse(p.updatedAt)||Date.now(),source:p.source||'GitHub',manual:false};
+            localStorage.setItem('nest_v1',JSON.stringify(S));
+            result='ok';break;
+          }
+        }
+      }catch(e){if(String(e.message).includes('unexpected format'))throw e;}
+      // 2) did the run fail? then stop waiting
+      try{
+        const rr=await fetch(`${base}/actions/runs?event=workflow_dispatch&per_page=10`,{headers:hdr,cache:'no-store'});
+        if(rr.ok){
+          const j=await rr.json();
+          const run=(j.workflow_runs||[]).find(x=>String(x.display_title||x.name||'').includes(reqId));
+          if(run&&run.status==='completed'&&run.conclusion&&run.conclusion!=='success'){
+            result='The price job failed — open GitHub → '+PRICES_REPO+' → Actions to see why';
+            break;
+          }
+        }
+      }catch(e){}
+    }
+    if(!result)result='Still running after '+Math.round(_pollMaxMs/1000)+'s — check GitHub → '+PRICES_REPO+' → Actions';
+  }catch(e){
+    result=result||(e&&e.message&&!/fetch|network|Failed/i.test(e.message)?e.message:'Network problem — could not reach GitHub');
+  }
+  _fetchingPrices=false;
+  if(S.currentTab==='home')renderCurrent();
+  toast(result==='ok'?'Prices updated':'⚠️ '+result);
+}
+
 // ═══════════════════════════════════════════════════════════
 //  SETTINGS
 // ═══════════════════════════════════════════════════════════
@@ -2066,15 +2441,15 @@ function openUpdateToken(){
   showSheet(`
     <div class="sheet-title">Update GitHub Token</div>
     <p style="font-size:13px;color:var(--label2);margin-bottom:16px">
-      Use a <strong>fine-grained token</strong> limited to your private <strong>${GH_REPO}</strong> repo, with <strong>Contents: Read &amp; write</strong>.
+      Use a <strong>fine-grained token</strong> limited to your private <strong>${GH_REPO}</strong> and <strong>${PRICES_REPO}</strong> repos, with <strong>Contents</strong> and <strong>Actions</strong> both set to <strong>Read &amp; write</strong>.
     </p>
     <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:16px;font-size:12px;color:var(--label2);line-height:1.8">
       <strong style="color:var(--label)">To get a working token:</strong><br>
       1. github.com → Settings<br>
       2. Developer settings → Personal access tokens<br>
       3. <strong style="color:var(--label)">Fine-grained tokens</strong> → Generate new token<br>
-      4. Repository access → <strong style="color:var(--label)">Only select repositories</strong> → ${GH_REPO}<br>
-      5. Permissions → <strong style="color:var(--label)">Contents: Read and write</strong>, then generate and copy
+      4. Repository access → <strong style="color:var(--label)">Only select repositories</strong> → ${GH_REPO} + ${PRICES_REPO}<br>
+      5. Permissions → <strong style="color:var(--label)">Contents</strong> and <strong style="color:var(--label)">Actions</strong>: Read and write, then generate and copy
     </div>
     <div class="form-group">
       <label class="form-label">Paste new token</label>
@@ -2239,7 +2614,7 @@ if ('serviceWorker' in navigator) {
 //  INIT
 // ═══════════════════════════════════════════════════════════
 load(); // load from localStorage first (instant, works offline)
-const maxId=Math.max(0,...S.accounts.map(a=>a.id),...S.entries.map(e=>e.id),...S.goals.map(g=>g.id),...S.titheEntries.map(t=>t.id),...(S.loans||[]).flatMap(l=>[l.id,...(l.payments||[]).map(p=>p.id)]));
+const maxId=Math.max(0,...S.accounts.map(a=>a.id),...S.entries.map(e=>e.id),...S.goals.map(g=>g.id),...S.titheEntries.map(t=>t.id),...(S.loans||[]).flatMap(l=>[l.id,...(l.payments||[]).map(p=>p.id)]),...(S.metalLots||[]).map(m=>m.id));
 _id=Math.max(_id,maxId);
 
 renderCurrent();
@@ -2251,7 +2626,7 @@ if(getToken()){
   loadFromGitHub().then(async res => {
     if(res==='loaded'){
       // GitHub had data — use it (newer, from another device)
-      const maxId2=Math.max(0,...S.accounts.map(a=>a.id),...S.entries.map(e=>e.id),...S.goals.map(g=>g.id),...S.titheEntries.map(t=>t.id),...(S.loans||[]).flatMap(l=>[l.id,...(l.payments||[]).map(p=>p.id)]));
+      const maxId2=Math.max(0,...S.accounts.map(a=>a.id),...S.entries.map(e=>e.id),...S.goals.map(g=>g.id),...S.titheEntries.map(t=>t.id),...(S.loans||[]).flatMap(l=>[l.id,...(l.payments||[]).map(p=>p.id)]),...(S.metalLots||[]).map(m=>m.id));
       _id=Math.max(_id,maxId2);
       renderCurrent();
       setSyncStatus('ok');
@@ -2266,7 +2641,7 @@ if(getToken()){
     } else {
       // Could not read — NEVER upload in this case, or a stale copy could overwrite your real data
       setSyncStatus('error');
-      toast('⚠️ '+_ghError+'. Showing this phone\'s copy; nothing was uploaded.');
+      toast('⚠️ '+_ghError+'. Using this phone\'s copy — nothing uploaded.');
     }
   }).catch(()=>setSyncStatus('error'));
 }
